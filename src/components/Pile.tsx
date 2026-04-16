@@ -4,8 +4,8 @@ import type { PileId } from "../game/types";
 
 interface Props {
   id: PileId;
-  label?: string;
-  suitHint?: string;
+  centerGlyph?: string;
+  glyphMuted?: boolean;
   hot?: boolean;
   dashed?: boolean;
   onClick?: () => void;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const Pile = forwardRef<HTMLDivElement, Props>(function Pile(
-  { id, label, suitHint, hot, dashed = true, onClick, width, height, children },
+  { id, centerGlyph, glyphMuted, hot, dashed = true, onClick, width, height, children },
   ref,
 ) {
   return (
@@ -24,28 +24,23 @@ export const Pile = forwardRef<HTMLDivElement, Props>(function Pile(
       data-pile={id}
       onClick={onClick}
       className={clsx(
-        "relative rounded-[12px] select-none transition-[box-shadow,background-color,border-color] duration-200",
+        "relative rounded-[14px] select-none transition-[box-shadow,background-color,border-color] duration-200",
         dashed && "slot",
         hot && "slot-hot",
+        onClick && "cursor-pointer",
       )}
       style={{ width, height }}
     >
-      {(label || suitHint) && (
+      {centerGlyph && (
         <div className="absolute inset-0 grid place-items-center pointer-events-none">
-          <div className="text-center">
-            {suitHint && (
-              <div
-                className="font-display opacity-30"
-                style={{ fontSize: Math.max(20, height * 0.28), lineHeight: 1 }}
-              >
-                {suitHint}
-              </div>
+          <div
+            className={clsx(
+              "font-semibold tracking-tight",
+              glyphMuted ? "text-[color:var(--fg-dim)]" : "text-[color:var(--fg-soft)]",
             )}
-            {label && (
-              <div className="font-display italic text-[color:var(--fg-soft)] opacity-60 text-[12px] tracking-wider uppercase mt-1">
-                {label}
-              </div>
-            )}
+            style={{ fontSize: Math.max(18, height * 0.32), lineHeight: 1, letterSpacing: "-0.03em" }}
+          >
+            {centerGlyph}
           </div>
         </div>
       )}

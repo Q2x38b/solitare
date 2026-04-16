@@ -8,6 +8,16 @@ import { WinOverlay } from "./components/WinOverlay";
 import { useGame } from "./hooks/useGame";
 import { useSound } from "./hooks/useSound";
 
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="tabular px-1.5 h-5 inline-flex items-center rounded-md bg-[color:var(--surface)] border border-[color:var(--line)] text-[10.5px] font-semibold text-[color:var(--fg-soft)]">
+        {children}
+      </span>
+    </span>
+  );
+}
+
 export default function App() {
   const g = useGame();
   const play = useSound(g.settings.sound);
@@ -107,7 +117,7 @@ export default function App() {
   }, [g, onUndo, onHint, onNewGame, onRestart, onToggleTheme, play]);
 
   return (
-    <div className="table-felt relative w-screen h-screen flex flex-col">
+    <div className="table-surface relative w-screen h-screen flex flex-col">
       <TopBar
         elapsed={g.elapsed}
         moves={g.state.moves}
@@ -123,7 +133,7 @@ export default function App() {
         theme={g.settings.theme}
         onToggleTheme={onToggleTheme}
       />
-      <div className="hair mx-6 opacity-70" />
+      <div className="hair mx-5" />
       <main className="relative flex-1 min-h-0">
         <Board
           state={g.state}
@@ -137,10 +147,14 @@ export default function App() {
         />
       </main>
 
-      <footer className="px-6 py-3 flex items-center justify-between text-[11.5px] font-display italic tracking-[0.12em] text-[color:var(--fg-soft)] uppercase opacity-80">
-        <div>double-click or drop onto foundations to build up · K to empty columns</div>
-        <div className="hidden md:block">
-          space · draw &nbsp;·&nbsp; z · undo &nbsp;·&nbsp; h · hint &nbsp;·&nbsp; a · auto &nbsp;·&nbsp; n · new
+      <footer className="px-5 py-3 flex items-center justify-between text-[11px] tracking-wide text-[color:var(--fg-dim)] font-medium">
+        <div>Double-click to auto-move · drag stacks to build down · K starts an empty column</div>
+        <div className="hidden md:flex items-center gap-3">
+          <Kbd>Space</Kbd> draw
+          <Kbd>Z</Kbd> undo
+          <Kbd>H</Kbd> hint
+          <Kbd>A</Kbd> auto
+          <Kbd>N</Kbd> new
         </div>
       </footer>
 

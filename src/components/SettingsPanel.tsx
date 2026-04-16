@@ -9,8 +9,8 @@ interface Props {
 
 export function SettingsPanel({ settings, onChange, onNewGame }: Props) {
   return (
-    <div className="space-y-5">
-      <Row label="Draw" hint="Changes apply to next deal">
+    <div className="space-y-1.5">
+      <Row label="Draw" hint="Applies to next deal">
         <Seg
           value={settings.drawCount}
           options={[
@@ -25,14 +25,14 @@ export function SettingsPanel({ settings, onChange, onNewGame }: Props) {
         <Seg
           value={settings.theme}
           options={[
-            { v: "felt", label: "Felt" },
-            { v: "paper", label: "Paper" },
+            { v: "felt", label: "Dark" },
+            { v: "paper", label: "Light" },
           ]}
           onChange={(v) => onChange({ theme: v as "felt" | "paper" })}
         />
       </Row>
 
-      <Row label="Auto-move on double-click">
+      <Row label="Double-click to move">
         <Toggle value={settings.autoMove} onChange={(v) => onChange({ autoMove: v })} />
       </Row>
 
@@ -44,28 +44,27 @@ export function SettingsPanel({ settings, onChange, onNewGame }: Props) {
         <Toggle value={settings.animations} onChange={(v) => onChange({ animations: v })} />
       </Row>
 
-      <div className="hair" />
-
-      <button
-        onClick={onNewGame}
-        className={clsx(
-          "w-full h-10 rounded-full font-display italic tracking-wide",
-          "bg-[color:var(--accent)] text-[color:var(--bg)] hover:brightness-110 focus-ring transition",
-        )}
-      >
-        new deal
-      </button>
+      <div className="pt-4">
+        <button
+          onClick={onNewGame}
+          className={clsx(
+            "w-full h-11 pill-accent text-[14px] font-semibold focus-ring tracking-tight",
+          )}
+        >
+          New deal
+        </button>
+      </div>
     </div>
   );
 }
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3 py-2.5">
       <div>
-        <div className="font-display text-[16px] leading-none">{label}</div>
+        <div className="text-[14.5px] font-medium leading-none">{label}</div>
         {hint && (
-          <div className="font-display italic text-[11px] text-[color:var(--fg-soft)] mt-1">
+          <div className="text-[11.5px] text-[color:var(--fg-dim)] mt-1.5 leading-none">
             {hint}
           </div>
         )}
@@ -85,15 +84,15 @@ function Seg<T extends string | number>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex p-0.5 rounded-full border border-[color:var(--rule)] bg-[color:var(--bg)]">
+    <div className="inline-flex p-0.5 rounded-full bg-[color:var(--surface-2)] border border-[color:var(--line)]">
       {options.map((o) => (
         <button
           key={String(o.v)}
           onClick={() => onChange(o.v)}
           className={clsx(
-            "px-3 h-7 rounded-full text-[13px] font-display transition focus-ring",
+            "px-3 h-7 rounded-full text-[12.5px] font-semibold transition focus-ring",
             value === o.v
-              ? "bg-[color:var(--accent)] text-[color:var(--bg)]"
+              ? "bg-[color:var(--accent)] text-[color:var(--accent-ink)]"
               : "text-[color:var(--fg-soft)] hover:text-[color:var(--fg)]",
           )}
         >
@@ -111,14 +110,14 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={clsx(
-        "w-10 h-6 rounded-full transition focus-ring relative",
-        value ? "bg-[color:var(--accent)]" : "bg-[color:color-mix(in_oklab,var(--fg)_16%,transparent)]",
+        "w-[42px] h-[24px] rounded-full transition focus-ring relative",
+        value ? "bg-[color:var(--accent)]" : "bg-[color:var(--surface-2)] border border-[color:var(--line)]",
       )}
     >
       <span
         className={clsx(
-          "absolute top-0.5 w-5 h-5 rounded-full bg-[color:var(--bg)] transition-transform",
-          value ? "translate-x-4" : "translate-x-0.5",
+          "absolute top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition-transform",
+          value ? "translate-x-[19px]" : "translate-x-[2px]",
         )}
       />
     </button>

@@ -26,35 +26,34 @@ export function Modal({ open, onClose, title, children }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
+          transition={{ duration: 0.16 }}
         >
           <div
-            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            initial={{ y: 12, scale: 0.98, opacity: 0 }}
+            initial={{ y: 10, scale: 0.98, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 8, scale: 0.98, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 420, damping: 36 }}
-            className="relative w-full max-w-[420px] rounded-2xl p-6 bg-[color:var(--bg-2)] border border-[color:var(--rule)] shadow-2xl"
+            exit={{ y: 6, scale: 0.98, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 440, damping: 36 }}
+            className="relative w-full max-w-[400px] rounded-[22px] p-6 bg-[color:var(--surface)] border border-[color:var(--line)] shadow-2xl"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display italic text-[22px] leading-none">{title}</h2>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-[18px] font-semibold tracking-tight">{title}</h2>
               <button
                 onClick={onClose}
-                className="w-8 h-8 grid place-items-center rounded-full hover:bg-[color:color-mix(in_oklab,var(--fg)_8%,transparent)] focus-ring"
+                className="w-8 h-8 grid place-items-center rounded-full hover:bg-[color:var(--surface-2)] text-[color:var(--fg-soft)] hover:text-[color:var(--fg)] focus-ring transition"
                 aria-label="Close"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 6 6 18M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="hair mb-5" />
             {children}
           </motion.div>
         </motion.div>

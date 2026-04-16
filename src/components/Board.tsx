@@ -33,7 +33,6 @@ type DragState = {
 };
 
 const SUIT_SYMBOLS: Record<string, string> = { S: "♠", H: "♥", D: "♦", C: "♣" };
-const FOUNDATION_LABELS = ["spades", "hearts", "diamonds", "clubs"];
 const FOUNDATION_SUITS = ["S", "H", "D", "C"];
 
 export function Board({
@@ -48,28 +47,30 @@ export function Board({
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pileRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [dims, setDims] = useState({ w: 980, h: 680, cw: 82, ch: 114, gap: 14, faceUpGap: 26, faceDownGap: 12 });
+  const [dims, setDims] = useState({ w: 980, cw: 92, ch: 132, gap: 16, faceUpGap: 30, faceDownGap: 12 });
   const [drag, setDrag] = useState<DragState | null>(null);
 
-  // Compute sizes responsively based on frame size
   useLayoutEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
     const update = () => {
       const rect = frame.getBoundingClientRect();
-      const w = rect.width;
-      const h = rect.height;
-      const targetW = Math.min(1080, Math.max(680, w - 24));
-      const cw = Math.floor((targetW - 14 * 6) / 7);
+      const availableW = rect.width - 24;
+      const availableH = rect.height - 24;
+
+      // 7 columns + 6 gaps. Fit to available width, cap maximum.
+      const cwByWidth = Math.floor((availableW - 14 * 6) / 7);
+      const cwMaxByHeight = Math.floor((availableH - 24 - 18 * 11) / 2.1);
+      const cw = Math.max(54, Math.min(118, cwByWidth, cwMaxByHeight));
       const ch = Math.round(cw * 1.42);
-      const gap = Math.round(cw * 0.17);
+      const gap = Math.round(cw * 0.18);
+      const targetW = cw * 7 + gap * 6;
       setDims({
         w: targetW,
-        h,
         cw,
         ch,
         gap,
-        faceUpGap: Math.round(ch * 0.24),
+        faceUpGap: Math.round(ch * 0.26),
         faceDownGap: Math.round(ch * 0.1),
       });
     };
@@ -83,14 +84,12 @@ export function Board({
     };
   }, []);
 
-  const topRowY = 18;
-  const tableauY = 18 + dims.ch + 34;
+  const topRowY = 8;
+  const tableauY = topRowY + dims.ch + 32;
 
-  // Coordinates for each pile's top-left
   const pileOrigin = useMemo(() => {
     const map: Record<string, { x: number; y: number }> = {};
-    const innerW = dims.w;
-    const xStart = Math.max(0, (innerW - (dims.cw * 7 + dims.gap * 6)) / 2);
+    const xStart = 0;
     map["stock"] = { x: xStart, y: topRowY };
     map["waste"] = { x: xStart + dims.cw + dims.gap, y: topRowY };
     for (let i = 0; i < 4; i++) {
@@ -100,9 +99,8 @@ export function Board({
       map[`t${i}`] = { x: xStart + (dims.cw + dims.gap) * i, y: tableauY };
     }
     return map;
-  }, [dims]);
+  }, [dims, topRowY, tableauY]);
 
-  // Compute every card's target position
   const cardTransforms = useMemo(() => {
     const map = new Map<string, { x: number; y: number; z: number; draggable: boolean; from: PileId; fromIdx: number }>();
     state.stock.forEach((c, i) => {
@@ -116,9 +114,8 @@ export function Board({
         fromIdx: i,
       });
     });
-    // waste: show last few offset horizontally for draw-3
     const wasteDisplay = state.drawCount === 3 ? 3 : 1;
-    const wasteOffset = Math.round(dims.cw * 0.22);
+    const wasteOffset = Math.round(dims.cw * 0.26);
     state.waste.forEach((c, i) => {
       const p = pileOrigin["waste"];
       const fromTop = state.waste.length - 1 - i;
@@ -187,8 +184,10 @@ export function Board({
       if (!cards.length) return;
 
       const frameRect = frameRef.current!.getBoundingClientRect();
-      const px = e.clientX - frameRect.left;
-      const py = e.clientY - frameRect.top;
+      const boardEl = (e.currentTarget as HTMLElement).parentElement!;
+      const boardRect = boardEl.getBoundingClientRect();
+      const px = e.clientX - boardRect.left;
+      const py = e.clientY - boardRect.top;
       (e.target as Element).setPointerCapture?.(e.pointerId);
       setDrag({
         from: info.from,
@@ -203,6 +202,10 @@ export function Board({
         hoverPile: null,
         didMove: false,
       });
+      // Prevent native text-select
+      e.preventDefault();
+      // unused vars for TS
+      void frameRect;
     },
     [cardTransforms, state.tableau, state.waste, state.foundations, isAutoRunning],
   );
@@ -211,15 +214,17 @@ export function Board({
     (e: PointerEvent) => {
       if (!drag) return;
       if (e.pointerId !== drag.pointerId) return;
-      const frameRect = frameRef.current!.getBoundingClientRect();
-      const px = e.clientX - frameRect.left;
-      const py = e.clientY - frameRect.top;
+      const boardEl = pileRefs.current["stock"]?.parentElement;
+      if (!boardEl) return;
+      const boardRect = boardEl.getBoundingClientRect();
+      const px = e.clientX - boardRect.left;
+      const py = e.clientY - boardRect.top;
       const dx = px - drag.startX;
       const dy = py - drag.startY;
       const didMove = drag.didMove || Math.abs(dx) + Math.abs(dy) > 4;
       const x = px - drag.offsetX;
       const y = py - drag.offsetY;
-      const hover = detectHover(px, py, drag.from, drag.cards.length, pileRefs.current, frameRect);
+      const hover = detectHover(px, py, drag.from, drag.cards.length, pileRefs.current, boardRect);
       setDrag({ ...drag, x, y, hoverPile: hover, didMove });
     },
     [drag],
@@ -232,7 +237,6 @@ export function Board({
       const d = drag;
       setDrag(null);
       if (!d.didMove) {
-        // Treat as click: attempt auto-move to foundation/tableau
         const ok = onAuto(d.from, d.cards.length);
         if (ok) play("place");
       } else if (d.hoverPile) {
@@ -290,18 +294,29 @@ export function Board({
   }, [state]);
 
   const canAuto = canAutoComplete(state);
+  const compactCards = dims.cw < 74;
+  const maxColHeight = Math.max(
+    ...state.tableau.map((col) => {
+      let h = 0;
+      col.forEach((c) => {
+        h += c.faceUp ? dims.faceUpGap : dims.faceDownGap;
+      });
+      return h;
+    }),
+  );
+  const boardHeight = tableauY + maxColHeight + dims.ch + 32;
 
   return (
     <div
       ref={frameRef}
-      className="relative w-full h-full overflow-auto thin-scroll"
+      className="relative w-full h-full overflow-auto thin-scroll flex items-start justify-center"
       style={{ touchAction: "none" }}
     >
       <div
-        className="relative mx-auto"
-        style={{ width: dims.w, height: tableauY + dims.ch + dims.faceUpGap * 12 + 40 }}
+        className="relative"
+        style={{ width: dims.w, height: boardHeight, margin: "16px 0" }}
       >
-        {/* Top row: stock, waste, foundations */}
+        {/* Stock */}
         <div
           ref={(el) => {
             pileRefs.current["stock"] = el;
@@ -318,11 +333,11 @@ export function Board({
             height={dims.ch}
             hot={showHint === "stock"}
             onClick={onStockClick}
-            label={state.stock.length === 0 ? "reset" : ""}
-            suitHint={state.stock.length === 0 && state.waste.length === 0 ? "⊘" : ""}
+            centerGlyph={state.stock.length === 0 && state.waste.length > 0 ? "↻" : state.stock.length === 0 && state.waste.length === 0 ? "∅" : ""}
           />
         </div>
 
+        {/* Waste */}
         <div
           ref={(el) => {
             pileRefs.current["waste"] = el;
@@ -335,13 +350,14 @@ export function Board({
         >
           <Pile
             id="waste"
-            width={dims.cw + Math.round(dims.cw * 0.44)}
+            width={dims.cw + Math.round(dims.cw * 0.52)}
             height={dims.ch}
             hot={showHint === "waste"}
             dashed={false}
           />
         </div>
 
+        {/* Foundations */}
         {[0, 1, 2, 3].map((f) => (
           <div
             key={f}
@@ -359,13 +375,13 @@ export function Board({
               width={dims.cw}
               height={dims.ch}
               hot={drag?.hoverPile === `f${f}` || showHint === `f${f}`}
-              suitHint={SUIT_SYMBOLS[FOUNDATION_SUITS[f]]}
-              label={FOUNDATION_LABELS[f]}
+              centerGlyph={SUIT_SYMBOLS[FOUNDATION_SUITS[f]]}
+              glyphMuted
             />
           </div>
         ))}
 
-        {/* Tableau columns */}
+        {/* Tableau slots */}
         {[0, 1, 2, 3, 4, 5, 6].map((t) => (
           <div
             key={t}
@@ -383,7 +399,8 @@ export function Board({
               width={dims.cw}
               height={dims.ch}
               hot={drag?.hoverPile === `t${t}` || showHint === `t${t}`}
-              label={state.tableau[t].length === 0 ? "K" : ""}
+              centerGlyph={state.tableau[t].length === 0 ? "K" : ""}
+              glyphMuted
             />
           </div>
         ))}
@@ -394,20 +411,23 @@ export function Board({
           const isDragging = draggingIds.has(card.id);
           const dragIndex = isDragging ? drag!.cards.findIndex((c) => c.id === card.id) : -1;
           const x = isDragging ? drag!.x : info.x;
-          const y = isDragging
-            ? drag!.y + dragIndex * dims.faceUpGap
-            : info.y;
+          const y = isDragging ? drag!.y + dragIndex * dims.faceUpGap : info.y;
           const z = isDragging ? 9000 + dragIndex : info.z + (info.from.startsWith("t") ? 100 : 0);
 
           return (
             <motion.div
               key={card.id}
               initial={false}
-              animate={{ x, y, rotate: isDragging ? (dragIndex === 0 ? -1.2 : 0) : 0 }}
+              animate={{
+                x,
+                y,
+                rotate: isDragging && dragIndex === 0 ? -1.2 : 0,
+                scale: isDragging ? 1.02 : 1,
+              }}
               transition={
                 isDragging
-                  ? { type: "spring", stiffness: 900, damping: 50, mass: 0.35 }
-                  : { type: "spring", stiffness: 420, damping: 36, mass: 0.6 }
+                  ? { type: "spring", stiffness: 1000, damping: 55, mass: 0.3 }
+                  : { type: "spring", stiffness: 440, damping: 36, mass: 0.55 }
               }
               style={{
                 position: "absolute",
@@ -418,16 +438,15 @@ export function Board({
               }}
               onPointerDown={(e) => handlePointerDown(e, card)}
               onDoubleClick={() => onCardDoubleClick(card)}
-              className={clsx("relative will-change-transform")}
+              className="relative will-change-transform"
             >
               <div
                 className={clsx(
-                  "w-full h-full rounded-[10px] relative",
-                  isDragging ? "card-shadow-drag" : info.z > 0 && info.from.startsWith("t") && card.faceUp ? "card-shadow-1" : "card-shadow-1",
+                  "w-full h-full rounded-[14px] relative",
+                  isDragging ? "card-shadow-drag" : "card-shadow-1",
                 )}
-                style={{ transform: isDragging ? "translateY(-2px)" : undefined }}
               >
-                <CardView card={card} tiny={dims.cw < 78} />
+                <CardView card={card} compact={compactCards} />
               </div>
             </motion.div>
           );
@@ -442,32 +461,13 @@ export function Board({
               exit={{ opacity: 0, y: 8 }}
               onClick={onAutoComplete}
               disabled={isAutoRunning}
-              className={clsx(
-                "absolute left-1/2 -translate-x-1/2 px-4 py-2 rounded-full focus-ring",
-                "bg-[color:var(--accent)] text-[color:var(--bg)] font-display italic",
-                "tracking-wide text-[14px] shadow-lg hover:brightness-110",
-              )}
-              style={{ top: topRowY + dims.ch + 8 }}
+              className="absolute left-1/2 -translate-x-1/2 px-4 h-9 pill-accent text-[13px] font-medium focus-ring"
+              style={{ top: topRowY + dims.ch + 2 }}
             >
-              complete →
+              Auto-complete
             </motion.button>
           )}
         </AnimatePresence>
-
-        {/* Empty hint for stock reset */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            left: pileOrigin["stock"].x + dims.cw / 2 - 8,
-            top: pileOrigin["stock"].y + dims.ch / 2 - 8,
-          }}
-        >
-          {state.stock.length === 0 && state.waste.length > 0 && (
-            <div className="font-display italic text-[color:var(--fg-soft)] opacity-60 text-[18px]">
-              ↻
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -479,7 +479,7 @@ function detectHover(
   from: PileId,
   count: number,
   refs: Record<string, HTMLDivElement | null>,
-  frameRect: DOMRect,
+  boardRect: DOMRect,
 ): PileId | null {
   const candidates: PileId[] = [];
   if (count === 1) {
@@ -494,16 +494,14 @@ function detectHover(
     const el = refs[id];
     if (!el) continue;
     const r = el.getBoundingClientRect();
-    const rx = r.left - frameRect.left;
-    const ry = r.top - frameRect.top;
-    // For tableau columns, extend vertically to cover whole stack
-    const extendDown = id.startsWith("t") ? 620 : 0;
+    const rx = r.left - boardRect.left;
+    const ry = r.top - boardRect.top;
+    const extendDown = id.startsWith("t") ? 800 : 0;
     const left = rx - 8;
     const right = rx + r.width + 8;
     const top = ry - 8;
     const bottom = ry + r.height + extendDown;
     if (x >= left && x <= right && y >= top && y <= bottom) {
-      // Choose the most specific overlap by area
       const area = (right - left) * (bottom - top);
       if (best === null || area < bestArea) {
         best = id;
@@ -513,4 +511,3 @@ function detectHover(
   }
   return best;
 }
-

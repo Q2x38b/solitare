@@ -19,12 +19,12 @@ function formatTime(s: number) {
 export function WinOverlay({ show, elapsed, moves, score, onNewGame, onClose }: Props) {
   const sparkles = useMemo(
     () =>
-      Array.from({ length: 60 }).map(() => ({
+      Array.from({ length: 40 }).map(() => ({
         x: Math.random() * 100,
         delay: Math.random() * 0.8,
-        size: 2 + Math.random() * 6,
-        dx: (Math.random() - 0.5) * 200,
-        dur: 1.4 + Math.random() * 1.6,
+        size: 2 + Math.random() * 5,
+        dx: (Math.random() - 0.5) * 180,
+        dur: 1.6 + Math.random() * 1.6,
       })),
     [show],
   );
@@ -36,11 +36,10 @@ export function WinOverlay({ show, elapsed, moves, score, onNewGame, onClose }: 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.22 }}
         >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+          <div className="absolute inset-0 bg-black/65 backdrop-blur-[3px]" onClick={onClose} />
 
-          {/* Sparkles */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {sparkles.map((s, i) => (
               <motion.div
@@ -58,7 +57,7 @@ export function WinOverlay({ show, elapsed, moves, score, onNewGame, onClose }: 
                   delay: s.delay,
                   ease: "easeOut",
                   repeat: Infinity,
-                  repeatDelay: 0.8,
+                  repeatDelay: 0.6,
                 }}
               />
             ))}
@@ -69,13 +68,13 @@ export function WinOverlay({ show, elapsed, moves, score, onNewGame, onClose }: 
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 12, opacity: 0, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="relative mx-auto mt-[18vh] max-w-[420px] rounded-2xl p-7 bg-[color:var(--bg-2)] border border-[color:var(--rule)] shadow-2xl text-center"
+            className="relative mx-auto mt-[16vh] max-w-[400px] rounded-[22px] p-7 bg-[color:var(--surface)] border border-[color:var(--line)] shadow-2xl text-center"
           >
-            <div className="font-display italic text-[14px] tracking-[0.28em] uppercase text-[color:var(--accent)]">
+            <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[color:var(--accent)]">
               Victory
             </div>
-            <div className="font-display text-[56px] leading-[0.9] mt-3 tracking-tight">
-              well played.
+            <div className="text-[40px] leading-[1.02] mt-3 tracking-tight font-semibold">
+              Well played.
             </div>
             <div className="hair my-6" />
             <div className="grid grid-cols-3 gap-2">
@@ -86,15 +85,15 @@ export function WinOverlay({ show, elapsed, moves, score, onNewGame, onClose }: 
             <div className="mt-6 flex gap-2 justify-center">
               <button
                 onClick={onClose}
-                className="px-4 h-10 rounded-full text-[13.5px] font-display italic border border-[color:var(--rule)] hover:bg-[color:color-mix(in_oklab,var(--fg)_8%,transparent)] focus-ring transition"
+                className="px-4 h-10 pill text-[13px] font-semibold focus-ring"
               >
-                view board
+                View board
               </button>
               <button
                 onClick={onNewGame}
-                className="px-5 h-10 rounded-full text-[13.5px] font-display italic bg-[color:var(--accent)] text-[color:var(--bg)] hover:brightness-110 focus-ring transition"
+                className="px-5 h-10 pill-accent text-[13px] font-semibold focus-ring"
               >
-                new deal →
+                New deal
               </button>
             </div>
           </motion.div>
@@ -106,11 +105,11 @@ export function WinOverlay({ show, elapsed, moves, score, onNewGame, onClose }: 
 
 function Cell({ label, value }: { label: string; value: string | number }) {
   return (
-    <div>
-      <div className="font-display italic text-[10px] uppercase tracking-[0.2em] text-[color:var(--fg-soft)]">
+    <div className="bg-[color:var(--surface-2)] rounded-2xl p-3 border border-[color:var(--line)]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--fg-dim)]">
         {label}
       </div>
-      <div className="tabular text-[22px] mt-1">{value}</div>
+      <div className="tabular text-[19px] font-semibold mt-1.5 leading-none">{value}</div>
     </div>
   );
 }
