@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import clsx from "clsx";
 
 interface StatProps {
@@ -59,10 +60,13 @@ export function TopBar({
     <header className="relative z-20 px-5 pt-4 pb-3">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="text-[18px] leading-none font-semibold tracking-tight">
+          <h1
+            className="leading-none font-semibold tracking-tight"
+            style={{ fontSize: "clamp(15px, 1.2vw, 18px)", letterSpacing: "-0.02em" }}
+          >
             Solitaire
-          </div>
-          <div className="h-4 w-px bg-[color:var(--line)]" />
+          </h1>
+          <div className="h-4 w-px bg-[color:var(--line)]" aria-hidden />
           <div className="text-[11px] font-medium tracking-wide uppercase text-[color:var(--fg-dim)]">
             Klondike · draw {drawCount}
           </div>
@@ -74,35 +78,40 @@ export function TopBar({
           <Stat label="Score" value={score} />
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <IconBtn onClick={onUndo} disabled={!canUndo} hint="Undo · Z">
+        <div className="flex items-center gap-1">
+          <IconBtn onClick={onUndo} disabled={!canUndo} label="Undo (Z)">
             <UndoIcon />
           </IconBtn>
-          <IconBtn onClick={onHint} hint="Hint · H">
+          <IconBtn onClick={onHint} label="Hint (H)">
             <HintIcon />
           </IconBtn>
-          <IconBtn onClick={onToggleTheme} hint={theme === "felt" ? "Light · T" : "Dark · T"}>
+          <IconBtn
+            onClick={onToggleTheme}
+            label={theme === "felt" ? "Switch to light (T)" : "Switch to dark (T)"}
+          >
             {theme === "felt" ? <SunIcon /> : <MoonIcon />}
           </IconBtn>
-          <IconBtn onClick={onStats} hint="Stats · I">
+          <IconBtn onClick={onStats} label="Statistics (I)">
             <StatsIcon />
           </IconBtn>
-          <IconBtn onClick={onSettings} hint="Settings · ,">
+          <IconBtn onClick={onSettings} label="Settings (,)">
             <GearIcon />
           </IconBtn>
-          <div className="w-px h-5 bg-[color:var(--line)] mx-1.5" />
-          <IconBtn onClick={onRestart} hint="Restart · R">
+          <div className="w-px h-5 bg-[color:var(--line)] mx-1.5" aria-hidden />
+          <IconBtn onClick={onRestart} label="Restart same deal (R)">
             <RestartIcon />
           </IconBtn>
-          <button
+          <motion.button
             onClick={onNewGame}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
             className={clsx(
               "ml-1 px-4 h-9 pill-accent text-[13px] font-semibold focus-ring",
               "tracking-tight",
             )}
           >
             New deal
-          </button>
+          </motion.button>
         </div>
       </div>
     </header>
@@ -112,34 +121,39 @@ export function TopBar({
 function IconBtn({
   onClick,
   children,
-  hint,
+  label,
   disabled,
 }: {
   onClick: () => void;
   children: React.ReactNode;
-  hint?: string;
+  label: string;
   disabled?: boolean;
 }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
       disabled={disabled}
-      title={hint}
-      aria-label={hint}
+      // Tooltip (title) stripped when disabled — disabled buttons aren't in tab
+      // order so the tooltip would never reach keyboard users (Interfaces #6).
+      title={disabled ? undefined : label}
+      aria-label={label}
+      aria-disabled={disabled}
+      whileTap={disabled ? undefined : { scale: 0.94 }}
+      transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
       className={clsx(
-        "w-9 h-9 rounded-full grid place-items-center focus-ring transition",
-        "text-[color:var(--fg-soft)] hover:text-[color:var(--fg)] hover:bg-[color:var(--surface)]",
+        "icon-btn w-9 h-9 rounded-full grid place-items-center focus-ring",
+        "text-[color:var(--fg-soft)]",
         disabled && "opacity-30 pointer-events-none",
       )}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
 function UndoIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M9 14 4 9l5-5" />
       <path d="M4 9h11a5 5 0 0 1 0 10H9" />
     </svg>
@@ -147,7 +161,7 @@ function UndoIcon() {
 }
 function HintIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M9 18h6" />
       <path d="M10 22h4" />
       <path d="M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.5 1 2.3h6c0-.8.3-1.7 1-2.3A7 7 0 0 0 12 2Z" />
@@ -156,7 +170,7 @@ function HintIcon() {
 }
 function SunIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
     </svg>
@@ -164,21 +178,21 @@ function SunIcon() {
 }
 function MoonIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M21 12.8A8 8 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
     </svg>
   );
 }
 function StatsIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
     </svg>
   );
 }
 function GearIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
     </svg>
@@ -186,7 +200,7 @@ function GearIcon() {
 }
 function RestartIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M3 12a9 9 0 1 0 3-6.7" />
       <path d="M3 4v5h5" />
     </svg>

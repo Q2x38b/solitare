@@ -1,21 +1,22 @@
-import { forwardRef } from "react";
+import { forwardRef, type ReactNode } from "react";
 import clsx from "clsx";
 import type { PileId } from "../game/types";
 
 interface Props {
   id: PileId;
-  centerGlyph?: string;
+  centerGlyph?: ReactNode;
   glyphMuted?: boolean;
+  glyphSize?: number;
   hot?: boolean;
   dashed?: boolean;
   onClick?: () => void;
   width: number;
   height: number;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 export const Pile = forwardRef<HTMLDivElement, Props>(function Pile(
-  { id, centerGlyph, glyphMuted, hot, dashed = true, onClick, width, height, children },
+  { id, centerGlyph, glyphMuted, glyphSize, hot, dashed = true, onClick, width, height, children },
   ref,
 ) {
   return (
@@ -31,17 +32,21 @@ export const Pile = forwardRef<HTMLDivElement, Props>(function Pile(
       )}
       style={{ width, height }}
     >
-      {centerGlyph && (
-        <div className="absolute inset-0 grid place-items-center pointer-events-none">
-          <div
-            className={clsx(
-              "font-semibold tracking-tight",
-              glyphMuted ? "text-[color:var(--fg-dim)]" : "text-[color:var(--fg-soft)]",
-            )}
-            style={{ fontSize: Math.max(18, height * 0.32), lineHeight: 1, letterSpacing: "-0.03em" }}
-          >
+      {centerGlyph !== undefined && centerGlyph !== "" && (
+        <div
+          className={clsx(
+            "absolute inset-0 grid place-items-center pointer-events-none",
+            glyphMuted ? "text-[color:var(--fg-dim)]" : "text-[color:var(--fg-soft)]",
+          )}
+          style={{
+            fontSize: glyphSize ?? Math.max(18, height * 0.3),
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          <span className="font-semibold tracking-tight inline-flex items-center justify-center">
             {centerGlyph}
-          </div>
+          </span>
         </div>
       )}
       {children}

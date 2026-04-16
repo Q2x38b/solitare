@@ -1,7 +1,8 @@
 import { memo } from "react";
 import clsx from "clsx";
-import { colorOf, rankChar, suitChar } from "../game/engine";
+import { colorOf, rankChar } from "../game/engine";
 import type { Card as CardT } from "../game/types";
+import { SuitIcon } from "./SuitIcon";
 
 interface Props {
   card: CardT;
@@ -28,9 +29,14 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
   const color = colorOf(card.suit);
   const isRed = color === "red";
   const r = rankChar(card.rank);
-  const s = suitChar(card.suit);
+  const inkClass = isRed
+    ? "text-[color:var(--color-card-red)]"
+    : "text-[color:var(--color-card-ink)]";
 
-  const inkClass = isRed ? "text-[color:var(--color-card-red)]" : "text-[color:var(--color-card-ink)]";
+  const rankSize = compact ? 18 : 22;
+  const suitSize = compact ? 13 : 16;
+  const rankSizeSmall = compact ? 13 : 15;
+  const suitSizeSmall = compact ? 10 : 12;
 
   return (
     <div
@@ -40,59 +46,34 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
       )}
       aria-label={`${r} of ${card.suit}`}
     >
-      {/* Top-left rank + suit */}
-      <div
-        className={clsx(
-          "absolute top-2 left-2 leading-none select-none tracking-tight",
-          inkClass,
-        )}
-      >
+      {/* Top-left */}
+      <div className={clsx("absolute top-2 left-2 leading-none select-none", inkClass)}>
         <div
           className="font-semibold"
-          style={{
-            fontSize: compact ? 18 : 22,
-            lineHeight: 0.95,
-            letterSpacing: "-0.03em",
-          }}
+          style={{ fontSize: rankSize, lineHeight: 0.95, letterSpacing: "-0.03em" }}
         >
           {r}
         </div>
-        <div
-          className="mt-0.5"
-          style={{
-            fontSize: compact ? 13 : 15,
-            lineHeight: 1,
-          }}
-        >
-          {s}
+        <div className="mt-1">
+          <SuitIcon suit={card.suit} size={suitSize} />
         </div>
       </div>
 
-      {/* Bottom-right rank + suit (small, mirrored) */}
+      {/* Bottom-right */}
       <div
         className={clsx(
-          "absolute bottom-2 right-2 leading-none select-none tracking-tight text-right",
+          "absolute bottom-2 right-2 leading-none select-none flex flex-col items-end",
           inkClass,
         )}
       >
         <div
           className="font-semibold"
-          style={{
-            fontSize: compact ? 13 : 15,
-            lineHeight: 0.95,
-            letterSpacing: "-0.02em",
-          }}
+          style={{ fontSize: rankSizeSmall, lineHeight: 0.95, letterSpacing: "-0.02em" }}
         >
           {r}
         </div>
-        <div
-          className="mt-0.5"
-          style={{
-            fontSize: compact ? 11 : 13,
-            lineHeight: 1,
-          }}
-        >
-          {s}
+        <div className="mt-0.5">
+          <SuitIcon suit={card.suit} size={suitSizeSmall} />
         </div>
       </div>
     </div>

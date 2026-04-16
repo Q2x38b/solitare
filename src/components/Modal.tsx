@@ -26,33 +26,50 @@ export function Modal({ open, onClose, title, children }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.16 }}
+          // System-announced state change: ease, not spring.
+          // Entrance ease-out (soft arrival), exit ease-in (get out of the way).
+          transition={{ duration: 0.16, ease: [0.22, 0.61, 0.36, 1] }}
         >
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70"
+            style={{ backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
             onClick={onClose}
+            aria-hidden
           />
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            initial={{ y: 10, scale: 0.98, opacity: 0 }}
+            // Scale from 0.96 (proportional to trigger size), not 0
+            initial={{ y: 6, scale: 0.96, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 6, scale: 0.98, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 440, damping: 36 }}
+            exit={{ y: 4, scale: 0.98, opacity: 0 }}
+            transition={{
+              duration: 0.18,
+              ease: [0.2, 0.8, 0.2, 1],
+              opacity: { duration: 0.14 },
+            }}
             className="relative w-full max-w-[400px] rounded-[22px] p-6 bg-[color:var(--surface)] border border-[color:var(--line)] shadow-2xl"
+            style={{ willChange: "transform, opacity" }}
           >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[18px] font-semibold tracking-tight">{title}</h2>
-              <button
+              <h2
+                className="font-semibold tracking-tight leading-none"
+                style={{ fontSize: "clamp(16px, 1.4vw, 18px)" }}
+              >
+                {title}
+              </h2>
+              <motion.button
                 onClick={onClose}
-                className="w-8 h-8 grid place-items-center rounded-full hover:bg-[color:var(--surface-2)] text-[color:var(--fg-soft)] hover:text-[color:var(--fg)] focus-ring transition"
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+                className="icon-btn w-8 h-8 grid place-items-center rounded-full text-[color:var(--fg-soft)] focus-ring"
                 aria-label="Close"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M18 6 6 18M6 6l12 12" />
                 </svg>
-              </button>
+              </motion.button>
             </div>
             {children}
           </motion.div>

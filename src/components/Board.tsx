@@ -3,8 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import clsx from "clsx";
 import { Card as CardView } from "./Card";
 import { Pile } from "./Pile";
+import { SuitIcon } from "./SuitIcon";
 import { canAutoComplete } from "../game/engine";
-import type { Card, GameState, PileId } from "../game/types";
+import type { Card, GameState, PileId, Suit } from "../game/types";
 
 interface Props {
   state: GameState;
@@ -32,8 +33,7 @@ type DragState = {
   didMove: boolean;
 };
 
-const SUIT_SYMBOLS: Record<string, string> = { S: "♠", H: "♥", D: "♦", C: "♣" };
-const FOUNDATION_SUITS = ["S", "H", "D", "C"];
+const FOUNDATION_SUITS: Suit[] = ["S", "H", "D", "C"];
 
 export function Board({
   state,
@@ -375,7 +375,9 @@ export function Board({
               width={dims.cw}
               height={dims.ch}
               hot={drag?.hoverPile === `f${f}` || showHint === `f${f}`}
-              centerGlyph={SUIT_SYMBOLS[FOUNDATION_SUITS[f]]}
+              centerGlyph={
+                <SuitIcon suit={FOUNDATION_SUITS[f]} size={Math.max(20, dims.ch * 0.28)} />
+              }
               glyphMuted
             />
           </div>

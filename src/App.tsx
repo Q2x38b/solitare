@@ -25,8 +25,18 @@ export default function App() {
   const [showStats, setShowStats] = useState(false);
   const [showWin, setShowWin] = useState(false);
 
+  // Apply theme with a one-frame "disable transitions" guard so hover/focus
+  // transitions don't briefly flash during the color swap.
   useEffect(() => {
-    document.documentElement.dataset.theme = g.settings.theme === "paper" ? "light" : "dark";
+    const html = document.documentElement;
+    html.setAttribute("data-disable-transitions", "");
+    html.dataset.theme = g.settings.theme === "paper" ? "light" : "dark";
+    // Force style flush then remove the guard next frame
+    void html.offsetHeight;
+    const id = window.requestAnimationFrame(() => {
+      html.removeAttribute("data-disable-transitions");
+    });
+    return () => cancelAnimationFrame(id);
   }, [g.settings.theme]);
 
   useEffect(() => {
@@ -67,7 +77,8 @@ export default function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.target && (e.target as HTMLElement).tagName === "INPUT") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey) {
         if (e.key.toLowerCase() === "z") {
           e.preventDefault();

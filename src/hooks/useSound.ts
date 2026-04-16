@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { usePrefersReducedMotion } from "./useReducedMotion";
 
 type SoundName = "flip" | "place" | "shuffle" | "win" | "click";
 
@@ -17,10 +18,12 @@ function createBeep(ctx: AudioContext, freq: number, dur: number, type: Oscillat
 
 export function useSound(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
+  // Respect prefers-reduced-motion as a reasonable proxy for "no ambient stimuli"
+  const reduced = usePrefersReducedMotion();
 
   const play = useCallback(
     (name: SoundName) => {
-      if (!enabled) return;
+      if (!enabled || reduced) return;
       try {
         if (!ctxRef.current) {
           ctxRef.current = new (window.AudioContext ||
@@ -53,7 +56,7 @@ export function useSound(enabled: boolean) {
         // ignore
       }
     },
-    [enabled],
+    [enabled, reduced],
   );
 
   return play;

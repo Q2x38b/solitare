@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import clsx from "clsx";
 import type { Settings } from "../game/types";
 
@@ -45,22 +46,23 @@ export function SettingsPanel({ settings, onChange, onNewGame }: Props) {
       </Row>
 
       <div className="pt-4">
-        <button
+        <motion.button
           onClick={onNewGame}
-          className={clsx(
-            "w-full h-11 pill-accent text-[14px] font-semibold focus-ring tracking-tight",
-          )}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+          className="w-full h-11 pill-accent text-[14px] font-semibold focus-ring tracking-tight"
         >
           New deal
-        </button>
+        </motion.button>
       </div>
     </div>
   );
 }
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  // Padding generous so there's no dead area between rows (Interfaces: interactivity)
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 py-3">
       <div>
         <div className="text-[14.5px] font-medium leading-none">{label}</div>
         {hint && (
@@ -84,21 +86,32 @@ function Seg<T extends string | number>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex p-0.5 rounded-full bg-[color:var(--surface-2)] border border-[color:var(--line)]">
-      {options.map((o) => (
-        <button
-          key={String(o.v)}
-          onClick={() => onChange(o.v)}
-          className={clsx(
-            "px-3 h-7 rounded-full text-[12.5px] font-semibold transition focus-ring",
-            value === o.v
-              ? "bg-[color:var(--accent)] text-[color:var(--accent-ink)]"
-              : "text-[color:var(--fg-soft)] hover:text-[color:var(--fg)]",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div
+      role="radiogroup"
+      className="inline-flex p-0.5 rounded-full bg-[color:var(--surface-2)] border border-[color:var(--line)]"
+    >
+      {options.map((o) => {
+        const selected = value === o.v;
+        return (
+          <motion.button
+            key={String(o.v)}
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(o.v)}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+            className={clsx(
+              "px-3 h-7 rounded-full text-[12.5px] font-semibold focus-ring",
+              // Don't change font-weight on selected state — prevents layout shift
+              selected
+                ? "bg-[color:var(--accent)] text-[color:var(--accent-ink)]"
+                : "text-[color:var(--fg-soft)]",
+            )}
+          >
+            {o.label}
+          </motion.button>
+        );
+      })}
     </div>
   );
 }
@@ -110,15 +123,17 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={clsx(
-        "w-[42px] h-[24px] rounded-full transition focus-ring relative",
-        value ? "bg-[color:var(--accent)]" : "bg-[color:var(--surface-2)] border border-[color:var(--line)]",
+        "w-[42px] h-[24px] rounded-full focus-ring relative transition-colors",
+        value
+          ? "bg-[color:var(--accent)]"
+          : "bg-[color:var(--surface-2)] border border-[color:var(--line)]",
       )}
+      style={{ transitionDuration: "140ms", transitionTimingFunction: "cubic-bezier(0.2,0.8,0.2,1)" }}
     >
-      <span
-        className={clsx(
-          "absolute top-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition-transform",
-          value ? "translate-x-[19px]" : "translate-x-[2px]",
-        )}
+      <motion.span
+        className="absolute top-[2px] w-5 h-5 rounded-full bg-white shadow-sm"
+        animate={{ x: value ? 19 : 2 }}
+        transition={{ type: "spring", stiffness: 700, damping: 38, mass: 0.6 }}
       />
     </button>
   );

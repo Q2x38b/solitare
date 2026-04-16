@@ -5,13 +5,14 @@
   --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Inter", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-bg: #000000;
-  --color-surface: #0e0e10;
-  --color-surface-2: #16161a;
-  --color-line: #232327;
-  --color-fg: #f5f5f7;
-  --color-fg-soft: #9a9aa2;
-  --color-fg-dim: #5a5a62;
+  /* Greys tinted with a touch of the yellow accent (Interfaces: "color your grays") */
+  --color-bg: #121110;
+  --color-surface: #1b1a17;
+  --color-surface-2: #26241f;
+  --color-line: #302d28;
+  --color-fg: #f5f5f2;
+  --color-fg-soft: #a39e93;
+  --color-fg-dim: #6a655c;
 
   --color-accent: #f5ee84;
   --color-accent-ink: #1b1b1f;
@@ -19,9 +20,11 @@
   --color-card: #ffffff;
   --color-card-ink: #0a0a0c;
   --color-card-red: #ee3d48;
-  --color-card-stripe: #111114;
+  --color-card-stripe: #0b0b0d;
 
+  /* Easings: short, purposeful ease-out for entrances; quick linear-ish for exits */
   --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out-quick: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -40,15 +43,29 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg: #f3f3f4;
+  --bg: #f3f2ee;
   --surface: #ffffff;
-  --surface-2: #ececee;
-  --line: #d9d9de;
-  --fg: #0a0a0c;
-  --fg-soft: #5a5a62;
-  --fg-dim: #9a9aa2;
-  --accent: #e9df5e;
+  --surface-2: #edebe5;
+  --line: #d9d6ce;
+  --fg: #121110;
+  --fg-soft: #5a554c;
+  --fg-dim: #9b968b;
+  --accent: #d4c846;
   --accent-ink: #1b1b1f;
+}
+
+/* Kill all transitions during explicit theme switches (Interfaces guideline #1) */
+[data-disable-transitions] *,
+[data-disable-transitions] *::before,
+[data-disable-transitions] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
 html,
@@ -64,55 +81,73 @@ body {
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow: hidden;
   letter-spacing: -0.005em;
+  font-weight: 400;
 }
 
+button,
+[role="switch"],
+[role="button"] {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Styled selection (Interfaces: "Style the document selection state") */
 ::selection {
   background: color-mix(in oklab, var(--accent) 50%, transparent);
   color: var(--fg);
 }
-
-/* Table surface — subtle radial glow on pure black */
-.table-surface {
-  background:
-    radial-gradient(
-      1200px 600px at 50% -20%,
-      color-mix(in oklab, #fff 4%, transparent),
-      transparent 70%
-    ),
-    var(--bg);
-  position: relative;
+::-moz-selection {
+  background: color-mix(in oklab, var(--accent) 50%, transparent);
+  color: var(--fg);
 }
 
-/* Card face — pure white, soft shadow */
+/* Table surface — radial gradient glow; pointer-events none so it can't hijack events */
+.table-surface {
+  background: var(--bg);
+  position: relative;
+  isolation: isolate;
+}
+.table-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    1200px 600px at 50% -20%,
+    color-mix(in oklab, #fff 4%, transparent),
+    transparent 70%
+  );
+  z-index: 0;
+}
+.table-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Card face — pure white */
 .card-face {
   background: var(--color-card);
   color: var(--color-card-ink);
 }
 
-/* Card back — white with diagonal dark stripes */
+/* Card back — white with dark diagonal stripes */
 .card-back {
   background: repeating-linear-gradient(
     45deg,
     #ffffff 0 5px,
     var(--color-card-stripe) 5px 10px
   );
-  position: relative;
-}
-.card-back::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  border-radius: inherit;
 }
 
-/* Empty pile slot — subtle outlined rounded rectangle */
+/* Empty pile slot */
 .slot {
   border: 1.5px dashed color-mix(in oklab, var(--fg) 14%, transparent);
   background: color-mix(in oklab, var(--fg) 3%, transparent);
@@ -144,12 +179,13 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Hair-line rule */
 .hair {
   height: 1px;
   background: var(--line);
+  pointer-events: none;
 }
 
+/* Focus ring via box-shadow so it follows border-radius (Interfaces guideline #7) */
 .focus-ring:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
@@ -165,7 +201,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
@@ -177,6 +215,7 @@ body {
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 12px color-mix(in oklab, var(--accent) 80%, transparent);
+  pointer-events: none;
 }
 
 .tabular {
@@ -184,27 +223,74 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* Dark pill button */
+/* Pill buttons — hover only on hover-capable devices (Interfaces: touch guideline #3) */
 .pill {
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--fg);
   border-radius: 999px;
-  transition: background-color 160ms var(--ease-out-soft), border-color 160ms var(--ease-out-soft);
+  transition:
+    background-color 140ms var(--ease-out-quick),
+    border-color 140ms var(--ease-out-quick),
+    color 140ms var(--ease-out-quick);
+  user-select: none;
+  -webkit-user-select: none;
 }
-.pill:hover:not(:disabled) {
-  background: var(--surface-2);
+@media (hover: hover) {
+  .pill:hover:not(:disabled) {
+    background: var(--surface-2);
+  }
 }
 .pill:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
 }
 
 .pill-accent {
   background: var(--accent);
   color: var(--accent-ink);
   border-radius: 999px;
-  transition: filter 160ms var(--ease-out-soft), transform 160ms var(--ease-spring);
+  transition: filter 140ms var(--ease-out-quick);
+  user-select: none;
+  -webkit-user-select: none;
 }
-.pill-accent:hover:not(:disabled) {
-  filter: brightness(1.05);
+@media (hover: hover) {
+  .pill-accent:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+}
+.pill-accent:disabled {
+  opacity: 0.4;
+}
+
+/* Icon buttons — hit-area expansion via invisible padding (Fitts's Law) */
+.icon-btn {
+  position: relative;
+  transition: color 140ms var(--ease-out-quick), background-color 140ms var(--ease-out-quick);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  pointer-events: auto;
+}
+@media (hover: hover) {
+  .icon-btn:not(:disabled):hover {
+    background-color: var(--surface);
+    color: var(--fg);
+  }
+}
+
+/* Prevent text resize in iOS landscape (already on html, reinforce on inputs if added later) */
+input,
+textarea {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Kbd chip */
+.kbd {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
