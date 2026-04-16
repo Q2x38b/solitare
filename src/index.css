@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Instrument Serif", "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-paper: #f5f1e8;
+  --color-paper-2: #ece6d6;
+  --color-ink: #1a1a1a;
+  --color-ink-soft: #4a4a4a;
+
+  --color-felt: #0e1510;
+  --color-felt-2: #151e17;
+  --color-felt-edge: #0a100c;
+  --color-cream: #f2ecdc;
+  --color-cream-soft: #c9c2b1;
+  --color-brass: #c9a86a;
+  --color-brass-soft: #8a7547;
+
+  --color-card: #fbf7ec;
+  --color-card-edge: #e7dfc9;
+  --color-red: #a8201a;
+  --color-red-ink: #7d1613;
+  --color-black: #1f1d1a;
+
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root {
+  color-scheme: dark;
+  --bg: var(--color-felt);
+  --bg-2: var(--color-felt-2);
+  --bg-edge: var(--color-felt-edge);
+  --fg: var(--color-cream);
+  --fg-soft: var(--color-cream-soft);
+  --accent: var(--color-brass);
+  --accent-soft: var(--color-brass-soft);
+  --rule: color-mix(in oklab, var(--color-cream) 14%, transparent);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: var(--color-paper);
+  --bg-2: var(--color-paper-2);
+  --bg-edge: #e4dcc4;
+  --fg: var(--color-ink);
+  --fg-soft: var(--color-ink-soft);
+  --accent: #8a6d2a;
+  --accent-soft: #a58a50;
+  --rule: color-mix(in oklab, var(--color-ink) 14%, transparent);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  font-feature-settings: "ss01", "ss02", "liga", "dlig";
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 42%, transparent);
+  color: var(--fg);
+}
+
+.table-felt {
+  background:
+    radial-gradient(1200px 700px at 50% -10%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 60%),
+    radial-gradient(900px 600px at 80% 110%, color-mix(in oklab, var(--bg-2) 60%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--bg), var(--bg-edge));
+  position: relative;
+}
+
+.table-felt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+}
+
+[data-theme="light"] .table-felt::before {
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+}
+
+.card-face {
+  background:
+    radial-gradient(120% 120% at 0% 0%, #fff 0%, var(--color-card) 55%, var(--color-card-edge) 100%);
+  position: relative;
+}
+.card-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0 0.05  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+.card-back {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in oklab, var(--accent) 65%, #000) 0 10px,
+      color-mix(in oklab, var(--accent) 50%, #000) 10px 20px
+    );
+  position: relative;
+}
+.card-back::before {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border: 1px solid color-mix(in oklab, var(--accent) 85%, #fff 10%);
+  border-radius: 6px;
+}
+.card-back::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px dashed color-mix(in oklab, var(--accent) 70%, #fff 20%);
+  border-radius: 4px;
+  background: radial-gradient(50% 60% at 50% 50%, color-mix(in oklab, var(--accent) 45%, transparent), transparent 70%);
+}
+
+.slot {
+  border: 1px dashed color-mix(in oklab, var(--fg) 22%, transparent);
+  background: color-mix(in oklab, var(--bg-edge) 40%, transparent);
+}
+
+.slot-hot {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--accent) 50%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+.card-shadow-1 {
+  box-shadow:
+    0 1px 0 color-mix(in oklab, #000 18%, transparent),
+    0 2px 6px color-mix(in oklab, #000 22%, transparent);
+}
+.card-shadow-2 {
+  box-shadow:
+    0 2px 0 color-mix(in oklab, #000 18%, transparent),
+    0 10px 24px color-mix(in oklab, #000 38%, transparent);
+}
+.card-shadow-drag {
+  box-shadow:
+    0 4px 0 color-mix(in oklab, #000 18%, transparent),
+    0 26px 60px color-mix(in oklab, #000 55%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+.hair {
+  height: 1px;
+  background: var(--rule);
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--fg) 25%, transparent); border-radius: 999px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.sparkle {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--accent) 80%, transparent);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
