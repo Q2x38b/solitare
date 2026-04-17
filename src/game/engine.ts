@@ -344,7 +344,16 @@ export type AutoAction =
  *     anyway, but scored so it never shows up)
  * If no move scores above the draw threshold, draw from stock.
  */
-export function findAutoPlayAction(state: GameState): AutoAction | null {
+export interface AutoPlayOpts {
+  // Direct-reverse guard: if the last committed move was t0 → t1 (count 1),
+  // we refuse to pick t1 → t0 (count 1) as the next move. Kills 2-cycles.
+  lastMove?: { from: PileId; to: PileId; count: number };
+}
+
+export function findAutoPlayAction(
+  state: GameState,
+  opts: AutoPlayOpts = {},
+): AutoAction | null {
   const tableauSrcs: PileId[] = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"];
 
   type Scored = { action: AutoAction; score: number };
@@ -531,6 +540,20 @@ export function findAutoPlayAction(state: GameState): AutoAction | null {
           action: { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } },
           score: 300,
         });
+      }
+    }
+  }
+
+  // Direct-reverse guard: zero out any move that's the exact inverse of the
+  // last committed move. Prevents the scorer from ping-ponging between two
+  // equally-scored chain rebuilds.
+  if (opts.lastMove) {
+    const { from, to, count } = opts.lastMove;
+    for (const c of candidates) {
+      if (c.action.kind !== "move") continue;
+      const m = c.action.move;
+      if (m.from === to && m.to === from && m.count === count) {
+        c.score = -10000;
       }
     }
   }

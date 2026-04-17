@@ -283,27 +283,52 @@ export function useGame(): UseGameReturn {
 
   const clearHint = useCallback(() => setShowHint(null), []);
 
-  // Auto-play: take one action every ~420ms. Cycle detection: if we see
-  // the same state fingerprint N times with only draw actions between,
-  // stop the run — the deck is cycling with no progress.
-  const autoPlayRef = useRef({ lastFingerprint: "", drawsSinceMove: 0 });
+  // Auto-play: take one action every ~420ms. Two cycle guards run in
+  // parallel:
+  //   - lastMove is passed to the engine so it refuses to invert its
+  //     previous non-foundation move (kills 2-cycles at the source).
+  //   - seenFingerprints tracks every state the loop has already landed
+  //     on during this run. If an action produces a state we've seen,
+  //     we've genuinely cycled — stop.
+  //   - drawsSinceMove counts consecutive draws with no state change
+  //     and stops if we've cycled the deck without any committed move.
+  const autoPlayRef = useRef<{
+    seen: Set<string>;
+    lastMove: { from: PileId; to: PileId; count: number } | null;
+    lastFingerprint: string;
+    drawsSinceMove: number;
+  }>({
+    seen: new Set(),
+    lastMove: null,
+    lastFingerprint: "",
+    drawsSinceMove: 0,
+  });
+
   useEffect(() => {
     if (!autoPlay || state.won || isAutoRunning) return;
-    const action = findAutoPlayAction(state);
+
+    // Seed the seen set with the current state so the very first move
+    // is guaranteed to land somewhere new.
+    const currentFp = fingerprint(state);
+    if (autoPlayRef.current.seen.size === 0) {
+      autoPlayRef.current.seen.add(currentFp);
+    }
+
+    const action = findAutoPlayAction(state, {
+      lastMove: autoPlayRef.current.lastMove ?? undefined,
+    });
     if (!action) {
       setAutoPlayState(false);
       return;
     }
-    const fp = fingerprint(state);
+
     if (action.kind === "draw") {
-      if (autoPlayRef.current.lastFingerprint === fp) {
+      if (autoPlayRef.current.lastFingerprint === currentFp) {
         autoPlayRef.current.drawsSinceMove += 1;
       } else {
-        autoPlayRef.current.lastFingerprint = fp;
+        autoPlayRef.current.lastFingerprint = currentFp;
         autoPlayRef.current.drawsSinceMove = 1;
       }
-      // If we've cycled without making a committed move for a full deck
-      // worth of draws, give up.
       const budget = state.drawCount === 1 ? 28 : 12;
       if (autoPlayRef.current.drawsSinceMove > budget) {
         setAutoPlayState(false);
@@ -313,13 +338,18 @@ export function useGame(): UseGameReturn {
       autoPlayRef.current.lastFingerprint = "";
       autoPlayRef.current.drawsSinceMove = 0;
     }
+
     const t = window.setTimeout(() => {
+      let nextState: GameState | null = null;
+      let committedMove: { from: PileId; to: PileId; count: number } | null = null;
+
       if (action.kind === "draw") {
         const r = drawFromStock(state);
         if (!r) {
           setAutoPlayState(false);
           return;
         }
+        nextState = r.state;
         setState(r.state);
         setUndoStack((u) => [...u, r.move]);
       } else {
@@ -328,15 +358,45 @@ export function useGame(): UseGameReturn {
           setAutoPlayState(false);
           return;
         }
+        nextState = r.state;
+        committedMove = action.move;
         setState(r.state);
         setUndoStack((u) => [...u, r.move]);
+      }
+
+      // State-level cycle detection — stop if we revisit a state the
+      // solver has already been in during this run.
+      const nextFp = fingerprint(nextState);
+      if (autoPlayRef.current.seen.has(nextFp)) {
+        setAutoPlayState(false);
+        return;
+      }
+      autoPlayRef.current.seen.add(nextFp);
+      // Cap memory so a long run doesn't leak; LRU by insertion order.
+      if (autoPlayRef.current.seen.size > 400) {
+        const first = autoPlayRef.current.seen.values().next().value;
+        if (first) autoPlayRef.current.seen.delete(first);
+      }
+
+      // Only remember non-foundation moves as the "reverse guard" —
+      // foundation plays are one-way so the guard would just waste a
+      // slot.
+      if (committedMove && !committedMove.to.startsWith("f")) {
+        autoPlayRef.current.lastMove = committedMove;
+      } else if (committedMove) {
+        autoPlayRef.current.lastMove = null;
       }
     }, 420);
     return () => window.clearTimeout(t);
   }, [autoPlay, state, isAutoRunning]);
 
   const setAutoPlay = useCallback((v: boolean) => {
-    autoPlayRef.current = { lastFingerprint: "", drawsSinceMove: 0 };
+    autoPlayRef.current = {
+      seen: new Set(),
+      lastMove: null,
+      lastFingerprint: "",
+      drawsSinceMove: 0,
+    };
     setAutoPlayState(v);
   }, []);
 
