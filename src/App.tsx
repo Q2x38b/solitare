@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Board } from "./components/Board";
 import { TopBar } from "./components/TopBar";
-import { Modal } from "./components/Modal";
+import { BottomSheet } from "./components/BottomSheet";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { StatsPanel } from "./components/StatsPanel";
-import { WinOverlay } from "./components/WinOverlay";
+import { WinPanel } from "./components/WinPanel";
+import { WinSparkles } from "./components/WinSparkles";
 import { useGame } from "./hooks/useGame";
 import { useSound } from "./hooks/useSound";
 
@@ -169,25 +170,28 @@ export default function App() {
         </div>
       </footer>
 
-      <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Settings">
+      <BottomSheet open={showSettings} onClose={() => setShowSettings(false)} title="Settings">
         <SettingsPanel
           settings={g.settings}
           onChange={(p) => g.updateSettings(p)}
           onNewGame={onNewGame}
         />
-      </Modal>
-      <Modal open={showStats} onClose={() => setShowStats(false)} title="Statistics">
+      </BottomSheet>
+      <BottomSheet open={showStats} onClose={() => setShowStats(false)} title="Statistics">
         <StatsPanel stats={g.stats} />
-      </Modal>
-
-      <WinOverlay
-        show={showWin && g.state.won}
-        elapsed={g.elapsed}
-        moves={g.state.moves}
-        score={g.state.score}
-        onNewGame={onNewGame}
-        onClose={() => setShowWin(false)}
-      />
+      </BottomSheet>
+      <BottomSheet open={showWin && g.state.won} onClose={() => setShowWin(false)}>
+        <WinPanel
+          elapsed={g.elapsed}
+          moves={g.state.moves}
+          score={g.state.score}
+          onNewGame={onNewGame}
+          onClose={() => setShowWin(false)}
+        />
+      </BottomSheet>
+      {/* Fullscreen decorative sparkles — pointer-events: none, purely
+          overlaying; the panel above is the real reward UI. */}
+      <WinSparkles show={showWin && g.state.won} />
     </div>
   );
 }

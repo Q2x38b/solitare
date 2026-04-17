@@ -262,7 +262,10 @@ export function canAutoComplete(state: GameState): boolean {
   return state.tableau.every((col) => col.every((c) => c.faceUp));
 }
 
-export function findAutoFoundationMove(state: GameState): MoveAttempt | null {
+export function findAutoFoundationMove(
+  state: GameState,
+  opts: { unsafe?: boolean } = {},
+): MoveAttempt | null {
   const sources: PileId[] = ["waste", "t0", "t1", "t2", "t3", "t4", "t5", "t6"];
   for (const src of sources) {
     const pile = pileRef(state, src);
@@ -271,15 +274,17 @@ export function findAutoFoundationMove(state: GameState): MoveAttempt | null {
     const fIdx = foundationIndexForSuit(state, top.suit);
     if (fIdx === null) continue;
     const fTop = state.foundations[fIdx][state.foundations[fIdx].length - 1];
-    if (canPlaceOnFoundation(fTop, top, fIdx, state)) {
-      const minOther = Math.min(
-        ...state.foundations
-          .filter((_, i) => i !== fIdx)
-          .map((f) => (f[f.length - 1] ? f[f.length - 1].rank : 0)),
-      );
-      if (top.rank <= 2 || top.rank <= minOther + 2) {
-        return { from: src, to: `f${fIdx}` as PileId, count: 1 };
-      }
+    if (!canPlaceOnFoundation(fTop, top, fIdx, state)) continue;
+    if (opts.unsafe) {
+      return { from: src, to: `f${fIdx}` as PileId, count: 1 };
+    }
+    const minOther = Math.min(
+      ...state.foundations
+        .filter((_, i) => i !== fIdx)
+        .map((f) => (f[f.length - 1] ? f[f.length - 1].rank : 0)),
+    );
+    if (top.rank <= 2 || top.rank <= minOther + 2) {
+      return { from: src, to: `f${fIdx}` as PileId, count: 1 };
     }
   }
   return null;

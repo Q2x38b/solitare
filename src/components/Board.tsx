@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Card as CardView } from "./Card";
 import { Pile } from "./Pile";
 import { SuitIcon } from "./SuitIcon";
+import { FannedCardsGlyph } from "./FannedCardsGlyph";
 import { canAutoComplete } from "../game/engine";
 import type { Card, GameState, PileId, Suit } from "../game/types";
 
@@ -49,6 +50,11 @@ export function Board({
   const pileRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [dims, setDims] = useState({ w: 980, cw: 92, ch: 132, gap: 16, faceUpGap: 30, faceDownGap: 12 });
   const [drag, setDrag] = useState<DragState | null>(null);
+  // Cards whose target position changed in the most recent render — lifted
+  // above the pack for the duration of the slide so they don't visually
+  // pass beneath other tableau cards.
+  const prevPosRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const [liftedIds, setLiftedIds] = useState<Set<string>>(() => new Set());
 
   useLayoutEffect(() => {
     const frame = frameRef.current;
@@ -161,6 +167,26 @@ export function Board({
     }
     return map;
   }, [state, pileOrigin, dims]);
+
+  // Detect cards whose position changed between renders and lift them.
+  useEffect(() => {
+    const prev = prevPosRef.current;
+    const next = new Map<string, { x: number; y: number }>();
+    const moved = new Set<string>();
+    cardTransforms.forEach((info, id) => {
+      next.set(id, { x: info.x, y: info.y });
+      const p = prev.get(id);
+      if (p && (Math.abs(p.x - info.x) > 1 || Math.abs(p.y - info.y) > 1)) {
+        moved.add(id);
+      }
+    });
+    prevPosRef.current = next;
+    if (moved.size) {
+      setLiftedIds(moved);
+      const t = window.setTimeout(() => setLiftedIds(new Set()), 420);
+      return () => window.clearTimeout(t);
+    }
+  }, [cardTransforms]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, card: Card) => {
@@ -401,7 +427,11 @@ export function Board({
               width={dims.cw}
               height={dims.ch}
               hot={drag?.hoverPile === `t${t}` || showHint === `t${t}`}
-              centerGlyph={state.tableau[t].length === 0 ? "K" : ""}
+              centerGlyph={
+                state.tableau[t].length === 0 ? (
+                  <FannedCardsGlyph size={Math.max(22, dims.ch * 0.32)} />
+                ) : undefined
+              }
               glyphMuted
             />
           </div>
@@ -411,10 +441,15 @@ export function Board({
         {allCards.map((card) => {
           const info = cardTransforms.get(card.id)!;
           const isDragging = draggingIds.has(card.id);
+          const isLifted = !isDragging && liftedIds.has(card.id);
           const dragIndex = isDragging ? drag!.cards.findIndex((c) => c.id === card.id) : -1;
           const x = isDragging ? drag!.x : info.x;
           const y = isDragging ? drag!.y + dragIndex * dims.faceUpGap : info.y;
-          const z = isDragging ? 9000 + dragIndex : info.z + (info.from.startsWith("t") ? 100 : 0);
+          const z = isDragging
+            ? 9000 + dragIndex
+            : isLifted
+              ? 5000 + info.z
+              : info.z + (info.from.startsWith("t") ? 100 : 0);
 
           return (
             <motion.div

@@ -35,8 +35,6 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
 
   const rankSize = compact ? 18 : 22;
   const suitSize = compact ? 13 : 16;
-  const rankSizeSmall = compact ? 13 : 15;
-  const suitSizeSmall = compact ? 10 : 12;
 
   return (
     <div
@@ -59,21 +57,22 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
         </div>
       </div>
 
-      {/* Bottom-right */}
+      {/* Bottom-right — rotated 180° so reading orientation matches top-left */}
       <div
         className={clsx(
-          "absolute bottom-2 right-2 leading-none select-none flex flex-col items-end",
+          "absolute bottom-2 right-2 leading-none select-none",
           inkClass,
         )}
+        style={{ transform: "rotate(180deg)", transformOrigin: "center" }}
       >
         <div
           className="font-semibold"
-          style={{ fontSize: rankSizeSmall, lineHeight: 0.95, letterSpacing: "-0.02em" }}
+          style={{ fontSize: rankSize, lineHeight: 0.95, letterSpacing: "-0.03em" }}
         >
           {r}
         </div>
-        <div className="mt-0.5">
-          <SuitIcon suit={card.suit} size={suitSizeSmall} />
+        <div className="mt-1">
+          <SuitIcon suit={card.suit} size={suitSize} />
         </div>
       </div>
     </div>

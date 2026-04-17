@@ -203,7 +203,7 @@ export function useGame(): UseGameReturn {
     let current = state;
     const moves: Move[] = [];
     const step = () => {
-      const m = findAutoFoundationMove(current);
+      const m = findAutoFoundationMove(current, { unsafe: true });
       if (!m) {
         setIsAutoRunning(false);
         setState(current);
