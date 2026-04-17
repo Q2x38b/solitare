@@ -32,6 +32,10 @@ type DragState = {
   pointerId: number;
   hoverPile: PileId | null;
   didMove: boolean;
+  // Smoothed pointer velocity (px / ms), used for drag-tilt rotation.
+  vx: number;
+  lastMoveX: number;
+  lastMoveT: number;
 };
 
 const FOUNDATION_SUITS: Suit[] = ["S", "H", "D", "C"];
@@ -227,6 +231,9 @@ export function Board({
         pointerId: e.pointerId,
         hoverPile: null,
         didMove: false,
+        vx: 0,
+        lastMoveX: px,
+        lastMoveT: performance.now(),
       });
       // Prevent native text-select
       e.preventDefault();
@@ -251,7 +258,21 @@ export function Board({
       const x = px - drag.offsetX;
       const y = py - drag.offsetY;
       const hover = detectHover(px, py, drag.from, drag.cards.length, pileRefs.current, boardRect);
-      setDrag({ ...drag, x, y, hoverPile: hover, didMove });
+      // Smoothed horizontal velocity for the drag tilt.
+      const now = performance.now();
+      const dt = Math.max(8, now - drag.lastMoveT);
+      const rawVx = (px - drag.lastMoveX) / dt;
+      const vx = drag.vx * 0.65 + rawVx * 0.35;
+      setDrag({
+        ...drag,
+        x,
+        y,
+        hoverPile: hover,
+        didMove,
+        vx,
+        lastMoveX: px,
+        lastMoveT: now,
+      });
     },
     [drag],
   );
@@ -451,6 +472,18 @@ export function Board({
               ? 5000 + info.z
               : info.z + (info.from.startsWith("t") ? 100 : 0);
 
+          // Drag tilt: top card follows smoothed pointer velocity,
+          // subsequent cards in the stack trail slightly for a natural
+          // ribbon feel. Clamped to keep it subtle.
+          const tiltMax = 10;
+          const rawTilt = isDragging && drag ? drag.vx * 14 : 0;
+          const tilt =
+            rawTilt > tiltMax ? tiltMax : rawTilt < -tiltMax ? -tiltMax : rawTilt;
+          const dragRotate = isDragging
+            ? dragIndex === 0
+              ? tilt
+              : tilt * Math.max(0.25, 1 - dragIndex * 0.15)
+            : 0;
           return (
             <motion.div
               key={card.id}
@@ -458,12 +491,18 @@ export function Board({
               animate={{
                 x,
                 y,
-                rotate: isDragging && dragIndex === 0 ? -1.2 : 0,
+                rotate: dragRotate,
                 scale: isDragging ? 1.02 : 1,
               }}
               transition={
                 isDragging
-                  ? { type: "spring", stiffness: 1000, damping: 55, mass: 0.3 }
+                  ? {
+                      type: "spring",
+                      stiffness: 1000,
+                      damping: 55,
+                      mass: 0.3,
+                      rotate: { type: "spring", stiffness: 320, damping: 22, mass: 0.5 },
+                    }
                   : { type: "spring", stiffness: 440, damping: 36, mass: 0.55 }
               }
               style={{

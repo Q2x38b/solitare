@@ -26,8 +26,8 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
       >
         <div
           aria-hidden
-          className="absolute rounded-[7px] card-back-stripes"
-          style={{ inset: 5 }}
+          className="absolute rounded-[6px] card-back-stripes"
+          style={{ inset: 8 }}
         />
       </div>
     );

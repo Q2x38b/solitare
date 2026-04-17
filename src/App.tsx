@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { Board } from "./components/Board";
 import { TopBar } from "./components/TopBar";
 import { Modal } from "./components/Modal";
@@ -8,6 +9,7 @@ import { WinPanel } from "./components/WinPanel";
 import { WinSparkles } from "./components/WinSparkles";
 import { useGame } from "./hooks/useGame";
 import { useSound } from "./hooks/useSound";
+import { isGameStuck } from "./game/engine";
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
@@ -25,6 +27,10 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showWin, setShowWin] = useState(false);
+  const [showStuck, setShowStuck] = useState(false);
+  // Track whether we've surfaced the stuck popup for this particular seed
+  // so dismissing it doesn't re-trigger on the next render.
+  const stuckAckedSeedRef = useRef<number | null>(null);
 
   // Apply theme with a one-frame "disable transitions" guard so hover/focus
   // transitions don't briefly flash during the color swap.
@@ -47,11 +53,29 @@ export default function App() {
     }
   }, [g.state.won, play]);
 
+  // Surface the "no more moves" popup when the game is definitively stuck.
+  // Re-arm the guard whenever a new seed is dealt so the next game can also
+  // detect a dead end.
+  useEffect(() => {
+    if (stuckAckedSeedRef.current !== g.state.seed) {
+      stuckAckedSeedRef.current = null;
+    }
+    if (
+      isGameStuck(g.state) &&
+      stuckAckedSeedRef.current !== g.state.seed &&
+      !g.autoPlay
+    ) {
+      setShowStuck(true);
+      g.setAutoPlay(false);
+    }
+  }, [g.state, g.autoPlay, g]);
+
   const onNewGame = useCallback(() => {
     play("shuffle");
     g.setAutoPlay(false);
     g.newRound();
     setShowWin(false);
+    setShowStuck(false);
     setShowSettings(false);
   }, [g, play]);
 
@@ -60,6 +84,7 @@ export default function App() {
     g.setAutoPlay(false);
     g.restart();
     setShowWin(false);
+    setShowStuck(false);
   }, [g, play]);
 
   const onUndo = useCallback(() => {
@@ -201,6 +226,63 @@ export default function App() {
           onNewGame={onNewGame}
           onClose={() => setShowWin(false)}
         />
+      </Modal>
+      <Modal
+        open={showStuck}
+        onClose={() => {
+          stuckAckedSeedRef.current = g.state.seed;
+          setShowStuck(false);
+        }}
+      >
+        <div className="text-center py-2">
+          <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[color:var(--fg-dim)]">
+            Dead end
+          </div>
+          <h2
+            className="mt-2 tracking-tight font-semibold"
+            style={{
+              fontSize: "clamp(24px, 3.2vw, 32px)",
+              lineHeight: 1.05,
+              letterSpacing: "-0.03em",
+            }}
+          >
+            No more moves.
+          </h2>
+          <p className="text-[13px] text-[color:var(--fg-soft)] mt-2 leading-snug">
+            The stock is empty and nothing on the board will advance. You can
+            restart this same deal or try a new shuffle.
+          </p>
+          <div className="hair my-5" />
+          <div className="flex gap-2 justify-center">
+            <motion.button
+              onClick={() => {
+                stuckAckedSeedRef.current = g.state.seed;
+                setShowStuck(false);
+              }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+              className="px-4 h-10 pill text-[13px] font-semibold focus-ring"
+            >
+              View board
+            </motion.button>
+            <motion.button
+              onClick={onRestart}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+              className="px-4 h-10 pill text-[13px] font-semibold focus-ring"
+            >
+              Restart
+            </motion.button>
+            <motion.button
+              onClick={onNewGame}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+              className="px-5 h-10 pill-accent text-[13px] font-semibold focus-ring"
+            >
+              New deal
+            </motion.button>
+          </div>
+        </div>
       </Modal>
       <WinSparkles show={showWin && g.state.won} />
     </div>

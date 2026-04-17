@@ -458,6 +458,26 @@ export function findAutoPlayAction(state: GameState): AutoAction | null {
   return null;
 }
 
+/**
+ * Definitively stuck: no stock, no waste, and no legal tableau move left.
+ * (We intentionally skip the harder "is this position unwinnable" solver
+ * question — false-positives are annoying. This version only fires when
+ * the player truly has nothing they can do.)
+ */
+export function isGameStuck(state: GameState): boolean {
+  if (state.won) return false;
+  if (state.stock.length > 0 || state.waste.length > 0) return false;
+  for (let i = 0; i < 7; i++) {
+    const col = state.tableau[i];
+    for (let j = 0; j < col.length; j++) {
+      if (!col[j].faceUp) continue;
+      const count = col.length - j;
+      if (findBestMoveForCard(state, `t${i}` as PileId, count)) return false;
+    }
+  }
+  return true;
+}
+
 export function hasAnyLegalMove(state: GameState): boolean {
   for (let i = 0; i < 7; i++) {
     const col = state.tableau[i];
