@@ -138,21 +138,12 @@ button:disabled {
   color: var(--color-card-ink);
 }
 
-/* Card back — white frame containing diagonal dark stripes */
-.card-back {
-  background: #ffffff;
-  position: relative;
-  overflow: hidden;
-}
-.card-back::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border-radius: 7px;
-  background-color: #ffffff;
+/* Card back — diagonal stripe pattern; the outer card is white so
+   these stripes appear to sit inside a 5px white frame. */
+.card-back-stripes {
   background-image: repeating-linear-gradient(
     45deg,
-    #1a1a1c 0px,
+    #1a1a1c 0,
     #1a1a1c 5px,
     #ffffff 5px,
     #ffffff 10px
