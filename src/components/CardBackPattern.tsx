@@ -15,12 +15,12 @@ const VB_H = 140;
 // Stripes are placed along the Y axis then rotated -45° through the centre
 // of the viewBox. Thickness + step tuned so ~5–6 bars are visible per card
 // with clear dark gaps between them.
-const STRIPE_THICKNESS = 20;
-const STRIPE_STEP = 44;
+const STRIPE_THICKNESS = 14;
+const STRIPE_STEP = 26;
 const STRIPE_X = -80;
 const STRIPE_WIDTH = 260;
-const FIRST_Y = -80;
-const LAST_Y = 200;
+const FIRST_Y = -120;
+const LAST_Y = 260;
 
 export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
   const ys: number[] = [];
