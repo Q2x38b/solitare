@@ -475,38 +475,25 @@ export function findAutoPlayAction(
         if (!canStackOnTableau(tTop, head)) continue;
 
         const toEmpty = target.length === 0;
-        let score = 0;
 
+        // Filter: only consider tableau → tableau moves that ACTUALLY
+        // make progress. These are:
+        //   - Flips a face-down card (biggest unlock)
+        //   - Empties a non-empty source into a non-empty target
+        //     (opens a real King slot)
+        // Pure chain rebuilds and empty-to-empty shuffles get dropped
+        // here — they were the source of the interleaved oscillation
+        // the scorer kept falling into.
+        const productive =
+          flipsFaceDown || (emptiesColumn && !toEmpty);
+        if (!productive) continue;
+
+        let score: number;
         if (flipsFaceDown) {
-          // Best kind of tableau move.
           score = 520 + firstUp * 35;
-        } else if (emptiesColumn && !toEmpty) {
-          // Empties a column (useful real-estate), but only if the
-          // destination isn't itself an empty column (which would be
-          // pointless shuffling).
-          score = 180;
         } else {
-          // Pure chain rebuild. Only interesting if the head already
-          // sits on its anchor and we're building a longer sequence.
-          // In practice low-score, so it won't be picked unless
-          // nothing better is available.
-          score = 30;
-        }
-
-        // Kings to empty columns: only when it actually unblocks.
-        if (head.rank === 13 && toEmpty && !flipsFaceDown) {
-          // Discourage — no point sending a King to empty unless it
-          // reveals a face-down, which is already scored above.
-          score -= 100;
-        }
-
-        // Prefer moves that don't break an already-stacked run: if the
-        // card immediately above the chunk (col[startIdx - 1]) forms a
-        // valid descending alt-colour with the new target top, we're
-        // not really "breaking" anything.
-        if (startIdx > firstUp) {
-          const above = col[startIdx - 1];
-          if (above.faceUp) score -= 30;
+          // emptiesColumn && !toEmpty
+          score = 180;
         }
 
         candidates.push({
@@ -560,7 +547,7 @@ export function findAutoPlayAction(
 
   // Pick the highest-scoring action, if it's worth more than a draw.
   candidates.sort((a, b) => b.score - a.score);
-  if (candidates.length && candidates[0].score > 15) {
+  if (candidates.length && candidates[0].score > 100) {
     return candidates[0].action;
   }
 
