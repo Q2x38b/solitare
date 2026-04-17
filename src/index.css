@@ -161,10 +161,44 @@ button:disabled {
 
 .slot-hot {
   border-color: var(--accent);
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  background: color-mix(in oklab, var(--accent) 26%, transparent);
   box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent),
-    0 0 0 2px color-mix(in oklab, var(--accent) 18%, transparent);
+    inset 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent),
+    0 0 0 3px color-mix(in oklab, var(--accent) 40%, transparent),
+    0 0 22px color-mix(in oklab, var(--accent) 40%, transparent);
+  animation: hint-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent),
+      0 0 0 3px color-mix(in oklab, var(--accent) 40%, transparent),
+      0 0 22px color-mix(in oklab, var(--accent) 40%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in oklab, var(--accent) 90%, transparent),
+      0 0 0 5px color-mix(in oklab, var(--accent) 55%, transparent),
+      0 0 30px color-mix(in oklab, var(--accent) 65%, transparent);
+  }
+}
+
+/* Ring overlay drawn on top of the topmost card of a hinted source pile
+   (the empty-slot glow doesn't reach when cards are on the pile). */
+.hint-ring {
+  position: absolute;
+  border-radius: 14px;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--accent) 80%, transparent),
+    0 0 26px color-mix(in oklab, var(--accent) 60%, transparent);
+  animation: hint-pulse-ring 1.15s ease-in-out infinite;
+  z-index: 4000;
+}
+@keyframes hint-pulse-ring {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
 }
 
 /* Card shadows */

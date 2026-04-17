@@ -9,10 +9,10 @@ interface StatProps {
 function Stat({ label, value }: StatProps) {
   return (
     <div className="flex flex-col items-start leading-none">
-      <div className="text-[10.5px] uppercase tracking-[0.14em] text-[color:var(--fg-dim)] font-medium">
+      <div className="text-[9.5px] sm:text-[10.5px] uppercase tracking-[0.14em] text-[color:var(--fg-dim)] font-medium">
         {label}
       </div>
-      <div className="tabular text-[17px] mt-1.5 font-semibold text-[color:var(--fg)]">
+      <div className="tabular text-[15px] sm:text-[17px] mt-1 sm:mt-1.5 font-semibold text-[color:var(--fg)]">
         {value}
       </div>
     </div>
@@ -61,16 +61,16 @@ export function TopBar({
   onToggleAutoPlay,
 }: Props) {
   return (
-    <header className="relative z-20 px-5 pt-4 pb-3">
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex items-center gap-7">
+    <header className="relative z-20 px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3">
+      <div className="flex items-center justify-between gap-3 sm:gap-6 flex-wrap">
+        <div className="flex items-center gap-4 sm:gap-7 flex-wrap">
           <Stat label="Time" value={formatTime(elapsed)} />
           <Stat label="Moves" value={moves} />
           <Stat label="Passes" value={passes} />
           <Stat label="Score" value={score} />
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap justify-end">
           <motion.button
             onClick={onToggleAutoPlay}
             whileTap={{ scale: 0.96 }}
@@ -79,14 +79,14 @@ export function TopBar({
             title={autoPlay ? "Stop auto-play (P)" : "Start auto-play (P)"}
             aria-label={autoPlay ? "Stop auto-play" : "Start auto-play"}
             className={clsx(
-              "h-9 px-3 rounded-full inline-flex items-center gap-1.5 focus-ring text-[12.5px] font-semibold transition",
+              "h-9 px-2.5 sm:px-3 rounded-full inline-flex items-center gap-1.5 focus-ring text-[12.5px] font-semibold transition",
               autoPlay
                 ? "bg-[color:var(--accent)] text-[color:var(--accent-ink)]"
                 : "pill",
             )}
           >
             {autoPlay ? <PauseIcon /> : <PlayIcon />}
-            <span className="tracking-tight">{autoPlay ? "Auto" : "Auto"}</span>
+            <span className="tracking-tight hidden sm:inline">Auto</span>
             {autoPlay && (
               <span
                 aria-hidden
@@ -112,7 +112,7 @@ export function TopBar({
           <IconBtn onClick={onSettings} label="Settings (,)">
             <GearIcon />
           </IconBtn>
-          <div className="w-px h-5 bg-[color:var(--line)] mx-1.5" aria-hidden />
+          <div className="hidden sm:block w-px h-5 bg-[color:var(--line)] mx-1.5" aria-hidden />
           <IconBtn onClick={onRestart} label="Restart same deal (R)">
             <RestartIcon />
           </IconBtn>
@@ -121,8 +121,8 @@ export function TopBar({
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
             className={clsx(
-              "ml-1 px-4 h-9 pill-accent text-[13px] font-semibold focus-ring",
-              "tracking-tight",
+              "ml-1 px-3 sm:px-4 h-9 pill-accent text-[12.5px] sm:text-[13px] font-semibold focus-ring",
+              "tracking-tight whitespace-nowrap",
             )}
           >
             New deal
@@ -168,18 +168,45 @@ function IconBtn({
 
 function UndoIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M9 14 4 9l5-5" />
-      <path d="M4 9h11a5 5 0 0 1 0 10H9" />
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <polygon
+        points="4.367 3.044 3.771 6.798 7.516 6.145 4.367 3.044"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        fill="currentColor"
+      />
+      <polyline
+        points="10 7 10 10 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path
+        d="m5,5.101c1.271-1.297,3.041-2.101,5-2.101,3.866,0,7,3.134,7,7s-3.134,7-7,7c-3.526,0-6.444-2.608-6.929-6"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
     </svg>
   );
 }
 function HintIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
-      <path d="M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.5 1 2.3h6c0-.8.3-1.7 1-2.3A7 7 0 0 0 12 2Z" />
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <polygon
+        points="11 3 9 9 16 9 9 17 11 11 4 11 11 3"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        fill="currentColor"
+      />
     </svg>
   );
 }
@@ -200,24 +227,44 @@ function MoonIcon() {
 }
 function StatsIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
+      <rect x="12.5" y="2" width="4" height="14" rx="1.75" ry="1.75" />
+      <rect x="7" y="7" width="4" height="9" rx="1.75" ry="1.75" />
+      <rect x="1.5" y="11" width="4" height="5" rx="1.75" ry="1.75" />
     </svg>
   );
 }
 function GearIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <line x1="3" y1="6" x2="10" y2="6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <circle cx="12.5" cy="6" r="2.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <line x1="15" y1="6" x2="17" y2="6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <line x1="17" y1="14" x2="10" y2="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <circle cx="7.5" cy="14" r="2.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <line x1="5" y1="14" x2="3" y2="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
   );
 }
 function RestartIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 12a9 9 0 1 0 3-6.7" />
-      <path d="M3 4v5h5" />
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="m5,5.101c1.271-1.297,3.041-2.101,5-2.101,3.866,0,7,3.134,7,7s-3.134,7-7,7c-2.792,0-5.203-1.635-6.326-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <polygon
+        points="4.367 3.044 3.771 6.798 7.516 6.145 4.367 3.044"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        fill="currentColor"
+      />
     </svg>
   );
 }

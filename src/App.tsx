@@ -195,8 +195,11 @@ export default function App() {
         />
       </main>
 
-      <footer className="px-5 py-3 flex items-center justify-between text-[11px] tracking-wide text-[color:var(--fg-dim)] font-medium">
-        <div>Double-click to auto-move · drag stacks to build down · K starts an empty column</div>
+      <footer className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between text-[10.5px] sm:text-[11px] tracking-wide text-[color:var(--fg-dim)] font-medium">
+        <div className="hidden sm:block">
+          Double-click to auto-move · drag stacks to build down · K starts an empty column
+        </div>
+        <div className="sm:hidden text-[10px]">Double-tap · drag to build · K opens empties</div>
         <div className="hidden md:flex items-center gap-3">
           <Kbd>Space</Kbd> draw
           <Kbd>Z</Kbd> undo

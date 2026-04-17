@@ -5,7 +5,7 @@ import { Card as CardView } from "./Card";
 import { Pile } from "./Pile";
 import { SuitIcon } from "./SuitIcon";
 import { FannedCardsGlyph } from "./FannedCardsGlyph";
-import { canAutoComplete } from "../game/engine";
+import { canAutoComplete, pileRef } from "../game/engine";
 import type { Card, GameState, PileId, Suit } from "../game/types";
 
 interface Props {
@@ -68,10 +68,12 @@ export function Board({
       const availableW = rect.width - 24;
       const availableH = rect.height - 24;
 
-      // 7 columns + 6 gaps. Fit to available width, cap maximum.
-      const cwByWidth = Math.floor((availableW - 14 * 6) / 7);
+      // 7 columns + 6 gaps. cw scales with available width; gap is 18% of
+      // cw so the formula is 7*cw + 6*0.18*cw = 8.08*cw ≈ availableW.
+      // Min 40 so even a 340px-wide viewport fits all 7 columns.
+      const cwByWidth = Math.floor(availableW / 8.08);
       const cwMaxByHeight = Math.floor((availableH - 24 - 18 * 11) / 2.1);
-      const cw = Math.max(54, Math.min(118, cwByWidth, cwMaxByHeight));
+      const cw = Math.max(40, Math.min(118, cwByWidth, cwMaxByHeight));
       const ch = Math.round(cw * 1.42);
       const gap = Math.round(cw * 0.18);
       const targetW = cw * 7 + gap * 6;
@@ -283,6 +285,21 @@ export function Board({
       if (e.pointerId !== drag.pointerId) return;
       const d = drag;
       setDrag(null);
+      // Lift the cards that were being dragged for both the successful
+      // target slide AND the snap-back animation. Without this, a rejected
+      // drop (especially from / to a foundation) would animate its cards
+      // *underneath* the other piles they pass through.
+      const ids = new Set(d.cards.map((c) => c.id));
+      setLiftedIds(ids);
+      window.setTimeout(() => {
+        setLiftedIds((cur) => {
+          // Only clear if we still own the set (a newer move may have
+          // replaced it through the cardTransforms effect).
+          let same = cur.size === ids.size;
+          if (same) for (const id of ids) if (!cur.has(id)) { same = false; break; }
+          return same ? new Set() : cur;
+        });
+      }, 420);
       if (!d.didMove) {
         const ok = onAuto(d.from, d.cards.length);
         if (ok) play("place");
@@ -527,6 +544,30 @@ export function Board({
             </motion.div>
           );
         })}
+
+        {/* Hint ring overlay — floats over the topmost card of the hinted
+            source pile. Empty piles already get the `.slot-hot` glow. */}
+        {showHint && (() => {
+          const src = showHint;
+          if (!src.startsWith("t") && src !== "waste" && !src.startsWith("f")) return null;
+          const pile = pileRef(state, src);
+          if (pile.length === 0) return null;
+          const topCard = pile[pile.length - 1];
+          const info = cardTransforms.get(topCard.id);
+          if (!info) return null;
+          return (
+            <div
+              className="hint-ring"
+              style={{
+                left: info.x - 3,
+                top: info.y - 3,
+                width: dims.cw + 6,
+                height: dims.ch + 6,
+              }}
+              aria-hidden
+            />
+          );
+        })()}
 
         {/* Auto-complete button */}
         <AnimatePresence>
