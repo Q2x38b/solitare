@@ -1,8 +1,8 @@
 // Card-back pattern: panel with fully-rounded diagonal pill stripes.
-// Uses preserveAspectRatio="xMidYMid slice" (not "none") so the pills
-// stay perfectly round. The viewBox aspect (100 × 150) closely matches
-// the 8px-framed slot aspect, and the stripe phase is tuned so both
-// diagonal corners land inside a stripe — no dead wedges, no stretch.
+// Stripes are generated symmetrically around the viewBox centre, and the
+// viewBox is rotated -45° through that same centre — giving the pattern
+// 180° rotational symmetry, so where stripes enter at the top-left they
+// exit at the bottom-right at the matching angle/offset.
 
 interface Props {
   inset?: number;
@@ -11,19 +11,26 @@ interface Props {
 
 const VB_W = 100;
 const VB_H = 150;
+const CENTER_Y = VB_H / 2; // 75
 
-// Chunky bars, modest gap, phase offset to cover both corners after the
-// -45° rotation. See top-of-file notes in git history for the derivation.
-const STRIPE_THICKNESS = 26;
-const STRIPE_STEP = 36;
+// Thickness / step derived so both diagonal corners of the viewBox land
+// inside a stripe after the -45° rotation (corners map to pre-rotation
+// y ≈ -13.4 and y ≈ 163.4). The nearest stripes at k=±3 sit at y=-15 /
+// y=165, which with thickness 24 cover [-27,-3] and [153,177] — both
+// corners comfortably inside the pattern.
+const STRIPE_THICKNESS = 24;
+const STRIPE_STEP = 30;
 const STRIPE_X = -160;
 const STRIPE_WIDTH = 420;
-const FIRST_Y = -200;
-const LAST_Y = 240;
+// ±4 steps on each side of centre = 9 stripes rendered. Rotation clips
+// to ~7 visible; the outer two provide slack for card aspect variance.
+const HALF_SPAN = 4;
 
 export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
   const ys: number[] = [];
-  for (let y = FIRST_Y; y <= LAST_Y; y += STRIPE_STEP) ys.push(y);
+  for (let k = -HALF_SPAN; k <= HALF_SPAN; k++) {
+    ys.push(CENTER_Y + k * STRIPE_STEP);
+  }
 
   return (
     <svg
@@ -34,7 +41,7 @@ export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
       preserveAspectRatio="xMidYMid slice"
     >
       <rect width={VB_W} height={VB_H} fill="var(--card-back-panel)" />
-      <g transform={`rotate(-45 ${VB_W / 2} ${VB_H / 2})`}>
+      <g transform={`rotate(-45 ${VB_W / 2} ${CENTER_Y})`}>
         {ys.map((y) => (
           <rect
             key={y}
