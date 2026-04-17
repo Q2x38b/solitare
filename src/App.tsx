@@ -167,7 +167,6 @@ export default function App() {
         moves={g.state.moves}
         score={g.state.score}
         passes={g.state.passes}
-        drawCount={g.state.drawCount}
         onNewGame={onNewGame}
         onRestart={onRestart}
         onUndo={onUndo}
@@ -183,7 +182,6 @@ export default function App() {
           g.setAutoPlay(!g.autoPlay);
         }}
       />
-      <div className="hair mx-5" />
       <main className="relative flex-1 min-h-0">
         <Board
           state={g.state}

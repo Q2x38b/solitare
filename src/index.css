@@ -39,6 +39,11 @@
   --fg-dim: var(--color-fg-dim);
   --accent: var(--color-accent);
   --accent-ink: var(--color-accent-ink);
+  /* Card back: dark body with muted grey stripes */
+  --card-back: #151517;
+  --card-back-panel: #1d1d1f;
+  --card-back-stripe: #4a4a4e;
+  --card-back-ring: rgba(255, 255, 255, 0.10);
 }
 
 [data-theme="light"] {
@@ -52,6 +57,12 @@
   --fg-dim: #929a8f;
   --accent: #57c98b;
   --accent-ink: #06180f;
+  /* Light-mode card back: warm off-white body with soft green-grey stripes
+     that echo the accent, instead of the dark-mode dark/grey pair. */
+  --card-back: #f6f4ee;
+  --card-back-panel: #ebe9e1;
+  --card-back-stripe: #a9c8b4;
+  --card-back-ring: rgba(0, 0, 0, 0.08);
 }
 
 /* Kill all transitions during explicit theme switches (Interfaces guideline #1) */

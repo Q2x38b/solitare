@@ -24,7 +24,6 @@ interface Props {
   moves: number;
   score: number;
   passes: number;
-  drawCount: 1 | 2 | 3;
   onNewGame: () => void;
   onRestart: () => void;
   onUndo: () => void;
@@ -49,7 +48,6 @@ export function TopBar({
   moves,
   score,
   passes,
-  drawCount,
   onNewGame,
   onRestart,
   onUndo,
@@ -65,19 +63,6 @@ export function TopBar({
   return (
     <header className="relative z-20 px-5 pt-4 pb-3">
       <div className="flex items-center justify-between gap-6">
-        <div className="flex items-center gap-3 min-w-0">
-          <h1
-            className="leading-none font-semibold tracking-tight"
-            style={{ fontSize: "clamp(15px, 1.2vw, 18px)", letterSpacing: "-0.02em" }}
-          >
-            Solitaire
-          </h1>
-          <div className="h-4 w-px bg-[color:var(--line)]" aria-hidden />
-          <div className="text-[11px] font-medium tracking-wide uppercase text-[color:var(--fg-dim)]">
-            Klondike · draw {drawCount}
-          </div>
-        </div>
-
         <div className="flex items-center gap-7">
           <Stat label="Time" value={formatTime(elapsed)} />
           <Stat label="Moves" value={moves} />

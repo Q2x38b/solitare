@@ -120,21 +120,25 @@ function Seg<T extends string | number>({
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={clsx(
-        "w-[42px] h-[24px] rounded-full focus-ring relative transition-colors",
+        "relative w-[44px] h-[26px] rounded-full focus-ring",
+        "transition-colors duration-150",
         value
           ? "bg-[color:var(--accent)]"
           : "bg-[color:var(--surface-2)] border border-[color:var(--line)]",
       )}
-      style={{ transitionDuration: "140ms", transitionTimingFunction: "cubic-bezier(0.2,0.8,0.2,1)" }}
     >
-      <motion.span
-        className="absolute top-[2px] w-5 h-5 rounded-full bg-white shadow-sm"
-        animate={{ x: value ? 19 : 2 }}
-        transition={{ type: "spring", stiffness: 700, damping: 38, mass: 0.6 }}
+      <span
+        aria-hidden
+        className="absolute top-[2px] left-[2px] w-[20px] h-[20px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+        style={{
+          transform: value ? "translateX(18px)" : "translateX(0px)",
+          transition: "transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        }}
       />
     </button>
   );
