@@ -18,9 +18,10 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
     return (
       <div
         className={clsx(
-          "absolute inset-0 rounded-[14px] overflow-hidden bg-white",
-          "ring-1 ring-black/40",
+          "absolute inset-0 rounded-[14px] overflow-hidden",
+          "ring-1 ring-white/10",
         )}
+        style={{ backgroundColor: "#151517" }}
         aria-label="Face-down card"
       >
         <div

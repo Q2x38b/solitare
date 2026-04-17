@@ -16,9 +16,10 @@ export function SettingsPanel({ settings, onChange, onNewGame }: Props) {
           value={settings.drawCount}
           options={[
             { v: 1, label: "1" },
+            { v: 2, label: "2" },
             { v: 3, label: "3" },
           ]}
-          onChange={(v) => onChange({ drawCount: v as 1 | 3 })}
+          onChange={(v) => onChange({ drawCount: v as 1 | 2 | 3 })}
         />
       </Row>
 

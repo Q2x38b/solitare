@@ -23,7 +23,8 @@ interface Props {
   elapsed: number;
   moves: number;
   score: number;
-  drawCount: 1 | 3;
+  passes: number;
+  drawCount: 1 | 2 | 3;
   onNewGame: () => void;
   onRestart: () => void;
   onUndo: () => void;
@@ -47,6 +48,7 @@ export function TopBar({
   elapsed,
   moves,
   score,
+  passes,
   drawCount,
   onNewGame,
   onRestart,
@@ -79,6 +81,7 @@ export function TopBar({
         <div className="flex items-center gap-7">
           <Stat label="Time" value={formatTime(elapsed)} />
           <Stat label="Moves" value={moves} />
+          <Stat label="Passes" value={passes} />
           <Stat label="Score" value={score} />
         </div>
 

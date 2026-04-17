@@ -20,7 +20,7 @@ export interface GameState {
   waste: Card[];
   foundations: [Card[], Card[], Card[], Card[]];
   tableau: [Card[], Card[], Card[], Card[], Card[], Card[], Card[]];
-  drawCount: 1 | 3;
+  drawCount: 1 | 2 | 3;
   moves: number;
   score: number;
   passes: number;
@@ -42,7 +42,7 @@ export interface Move {
 }
 
 export interface Settings {
-  drawCount: 1 | 3;
+  drawCount: 1 | 2 | 3;
   theme: "felt" | "paper";
   sound: boolean;
   autoMove: boolean;
@@ -57,4 +57,6 @@ export interface Stats {
   bestScore: number | null;
   currentStreak: number;
   longestStreak: number;
+  totalPasses: number;
+  fewestPasses: number | null;
 }

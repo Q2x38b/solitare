@@ -141,6 +141,7 @@ export default function App() {
         elapsed={g.elapsed}
         moves={g.state.moves}
         score={g.state.score}
+        passes={g.state.passes}
         drawCount={g.state.drawCount}
         onNewGame={onNewGame}
         onRestart={onRestart}

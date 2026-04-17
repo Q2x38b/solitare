@@ -138,15 +138,16 @@ button:disabled {
   color: var(--color-card-ink);
 }
 
-/* Card back — diagonal stripe pattern; the outer card is white so
-   these stripes appear to sit inside a 5px white frame. */
+/* Card back — dark body with diagonal light stripes (inverse of white bg).
+   Outer card colour is set on the parent; this inner div paints the pattern
+   inset 5px so the outer dark frames the stripe field. */
 .card-back-stripes {
   background-image: repeating-linear-gradient(
     45deg,
-    #1a1a1c 0,
-    #1a1a1c 5px,
-    #ffffff 5px,
-    #ffffff 10px
+    #ededef 0,
+    #ededef 5px,
+    #151517 5px,
+    #151517 10px
   );
   pointer-events: none;
 }

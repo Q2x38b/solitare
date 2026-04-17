@@ -31,6 +31,8 @@ const defaultStats: Stats = {
   bestScore: null,
   currentStreak: 0,
   longestStreak: 0,
+  totalPasses: 0,
+  fewestPasses: null,
 };
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -134,9 +136,12 @@ export function useGame(): UseGameReturn {
         bestScore: s.bestScore === null ? state.score : Math.max(s.bestScore, state.score),
         currentStreak: streak,
         longestStreak: Math.max(s.longestStreak, streak),
+        totalPasses: s.totalPasses + state.passes,
+        fewestPasses:
+          s.fewestPasses === null ? state.passes : Math.min(s.fewestPasses, state.passes),
       };
     });
-  }, [state.won, state.moves, state.score, elapsed]);
+  }, [state.won, state.moves, state.score, state.passes, elapsed]);
 
   const draw = useCallback(() => {
     const r = drawFromStock(state);
@@ -192,6 +197,7 @@ export function useGame(): UseGameReturn {
           ...s,
           gamesPlayed: s.gamesPlayed + 1,
           currentStreak: 0,
+          totalPasses: s.totalPasses + state.passes,
         };
       }
       return s;
@@ -199,7 +205,7 @@ export function useGame(): UseGameReturn {
     setState(newGame({ drawCount: settings.drawCount }));
     setUndoStack([]);
     winRecorded.current = false;
-  }, [settings.drawCount, state.won, state.moves]);
+  }, [settings.drawCount, state.won, state.moves, state.passes]);
 
   const autoComplete = useCallback(() => {
     if (!canAutoComplete(state)) return;

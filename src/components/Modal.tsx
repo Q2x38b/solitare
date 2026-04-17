@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   open: boolean;
@@ -10,6 +11,9 @@ interface Props {
 }
 
 export function Modal({ open, onClose, title, children, width = 420 }: Props) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
@@ -19,21 +23,38 @@ export function Modal({ open, onClose, title, children, width = 420 }: Props) {
     return () => window.removeEventListener("keydown", h);
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  const node = (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 grid place-items-center p-6"
+          // Inline styles guarantee the containing block is the viewport
+          // regardless of ancestor transforms / containment.
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.16, ease: [0.22, 0.61, 0.36, 1] }}
         >
           <div
-            className="absolute inset-0 bg-black/70"
-            style={{ backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
             onClick={onClose}
             aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+            }}
           />
           <motion.div
             role="dialog"
@@ -47,8 +68,13 @@ export function Modal({ open, onClose, title, children, width = 420 }: Props) {
               ease: [0.2, 0.8, 0.2, 1],
               opacity: { duration: 0.14 },
             }}
-            className="relative w-full rounded-[22px] p-6 bg-[color:var(--surface)] border border-[color:var(--line)] shadow-2xl"
-            style={{ maxWidth: width, willChange: "transform, opacity" }}
+            className="rounded-[22px] p-6 bg-[color:var(--surface)] border border-[color:var(--line)] shadow-2xl"
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: width,
+              willChange: "transform, opacity",
+            }}
           >
             {title && (
               <div className="flex items-center justify-between mb-5">
@@ -77,4 +103,6 @@ export function Modal({ open, onClose, title, children, width = 420 }: Props) {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(node, document.body);
 }

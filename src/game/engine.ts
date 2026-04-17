@@ -44,7 +44,7 @@ export function shuffle(deck: Card[], seed: number): Card[] {
   return d;
 }
 
-export function newGame(opts: { seed?: number; drawCount?: 1 | 3 } = {}): GameState {
+export function newGame(opts: { seed?: number; drawCount?: 1 | 2 | 3 } = {}): GameState {
   const seed = opts.seed ?? (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
   const deck = shuffle(buildDeck(), seed);
   const tableau: GameState["tableau"] = [[], [], [], [], [], [], []];
@@ -206,6 +206,9 @@ export function drawFromStock(state: GameState): { state: GameState; move: Move 
     if (next.drawCount === 1 && next.passes > 1) {
       next.score = Math.max(0, next.score - 100);
       move.scoreDelta = -100;
+    } else if (next.drawCount === 2 && next.passes > 2) {
+      next.score = Math.max(0, next.score - 50);
+      move.scoreDelta = -50;
     } else if (next.drawCount === 3 && next.passes > 3) {
       next.score = Math.max(0, next.score - 20);
       move.scoreDelta = -20;
@@ -447,7 +450,8 @@ export function findAutoPlayAction(state: GameState): AutoAction | null {
     return { kind: "draw" };
   }
   // Recycle stock only if we haven't recycled too many times already
-  if (state.waste.length > 0 && state.passes < (state.drawCount === 1 ? 2 : 4)) {
+  const recycleBudget = state.drawCount === 1 ? 2 : state.drawCount === 2 ? 3 : 4;
+  if (state.waste.length > 0 && state.passes < recycleBudget) {
     return { kind: "draw" };
   }
 

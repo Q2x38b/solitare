@@ -26,6 +26,8 @@ export function StatsPanel({ stats }: Props) {
         <Cell label="Best moves" value={stats.bestMoves ?? "—"} />
         <Cell label="Best score" value={stats.bestScore ?? "—"} />
         <Cell label="Streak" value={`${stats.currentStreak} / ${stats.longestStreak}`} />
+        <Cell label="Total passes" value={stats.totalPasses} />
+        <Cell label="Fewest passes" value={stats.fewestPasses ?? "—"} />
       </div>
     </div>
   );
