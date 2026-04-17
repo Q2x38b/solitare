@@ -1,5 +1,5 @@
-import { motion } from "motion/react";
-import clsx from "clsx";
+import { Button } from "./ui/button";
+import { cn } from "../lib/utils";
 
 interface StatProps {
   label: string;
@@ -31,8 +31,6 @@ interface Props {
   onHint: () => void;
   onSettings: () => void;
   onStats: () => void;
-  theme: "felt" | "paper";
-  onToggleTheme: () => void;
   autoPlay: boolean;
   onToggleAutoPlay: () => void;
 }
@@ -55,8 +53,6 @@ export function TopBar({
   onHint,
   onSettings,
   onStats,
-  theme,
-  onToggleTheme,
   autoPlay,
   onToggleAutoPlay,
 }: Props) {
@@ -71,19 +67,14 @@ export function TopBar({
         </div>
 
         <div className="flex items-center gap-1 flex-wrap justify-end">
-          <motion.button
+          <Button
             onClick={onToggleAutoPlay}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+            variant={autoPlay ? "default" : "secondary"}
+            size="md"
             aria-pressed={autoPlay}
             title={autoPlay ? "Stop auto-play (P)" : "Start auto-play (P)"}
             aria-label={autoPlay ? "Stop auto-play" : "Start auto-play"}
-            className={clsx(
-              "h-9 px-2.5 sm:px-3 rounded-full inline-flex items-center gap-1.5 focus-ring text-[12.5px] font-semibold transition",
-              autoPlay
-                ? "bg-[color:var(--accent)] text-[color:var(--accent-ink)]"
-                : "pill",
-            )}
+            className="px-2.5 sm:px-3"
           >
             {autoPlay ? <PauseIcon /> : <PlayIcon />}
             <span className="tracking-tight hidden sm:inline">Auto</span>
@@ -93,76 +84,68 @@ export function TopBar({
                 className="ml-0.5 w-1.5 h-1.5 rounded-full bg-[color:var(--accent-ink)] animate-pulse"
               />
             )}
-          </motion.button>
-          <IconBtn onClick={onUndo} disabled={!canUndo} label="Undo (Z)">
-            <UndoIcon />
-          </IconBtn>
-          <IconBtn onClick={onHint} label="Hint (H)">
-            <HintIcon />
-          </IconBtn>
-          <IconBtn
-            onClick={onToggleTheme}
-            label={theme === "felt" ? "Switch to light (T)" : "Switch to dark (T)"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title={canUndo ? "Undo (Z)" : undefined}
+            aria-label="Undo"
           >
-            {theme === "felt" ? <SunIcon /> : <MoonIcon />}
-          </IconBtn>
-          <IconBtn onClick={onStats} label="Statistics (I)">
+            <UndoIcon />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onHint}
+            title="Hint (H)"
+            aria-label="Hint"
+          >
+            <HintIcon />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onStats}
+            title="Statistics (I)"
+            aria-label="Statistics"
+          >
             <StatsIcon />
-          </IconBtn>
-          <IconBtn onClick={onSettings} label="Settings (,)">
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSettings}
+            title="Settings (,)"
+            aria-label="Settings"
+          >
             <GearIcon />
-          </IconBtn>
-          <div className="hidden sm:block w-px h-5 bg-[color:var(--line)] mx-1.5" aria-hidden />
-          <IconBtn onClick={onRestart} label="Restart same deal (R)">
+          </Button>
+          <div
+            aria-hidden
+            className={cn("hidden sm:block w-px h-5 bg-[color:var(--line)] mx-1.5")}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onRestart}
+            title="Restart same deal (R)"
+            aria-label="Restart same deal"
+          >
             <RestartIcon />
-          </IconBtn>
-          <motion.button
+          </Button>
+          <Button
             onClick={onNewGame}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
-            className={clsx(
-              "ml-1 px-3 sm:px-4 h-9 pill-accent text-[12.5px] sm:text-[13px] font-semibold focus-ring",
-              "tracking-tight whitespace-nowrap",
-            )}
+            variant="default"
+            size="md"
+            className="ml-1 px-3 sm:px-4 text-[12.5px] sm:text-[13px]"
           >
             New deal
-          </motion.button>
+          </Button>
         </div>
       </div>
     </header>
-  );
-}
-
-function IconBtn({
-  onClick,
-  children,
-  label,
-  disabled,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-  label: string;
-  disabled?: boolean;
-}) {
-  return (
-    <motion.button
-      onClick={onClick}
-      disabled={disabled}
-      // Tooltip (title) stripped when disabled — disabled buttons aren't in tab
-      // order so the tooltip would never reach keyboard users (Interfaces #6).
-      title={disabled ? undefined : label}
-      aria-label={label}
-      aria-disabled={disabled}
-      whileTap={disabled ? undefined : { scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
-      className={clsx(
-        "icon-btn w-9 h-9 rounded-full grid place-items-center focus-ring",
-        "text-[color:var(--fg-soft)]",
-        disabled && "opacity-30 pointer-events-none",
-      )}
-    >
-      {children}
-    </motion.button>
   );
 }
 
@@ -207,21 +190,6 @@ function HintIcon() {
         strokeWidth="2"
         fill="currentColor"
       />
-    </svg>
-  );
-}
-function SunIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-    </svg>
-  );
-}
-function MoonIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M21 12.8A8 8 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
     </svg>
   );
 }

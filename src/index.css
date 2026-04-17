@@ -46,32 +46,6 @@
   --card-back-ring: rgba(255, 255, 255, 0.10);
 }
 
-[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f0f3ee;
-  --surface: #ffffff;
-  --surface-2: #e6ebe4;
-  --line: #d2d9ce;
-  --fg: #111512;
-  --fg-soft: #4f594d;
-  --fg-dim: #929a8f;
-  --accent: #57c98b;
-  --accent-ink: #06180f;
-  /* Light-mode card back: warm off-white body with soft green-grey stripes
-     that echo the accent, instead of the dark-mode dark/grey pair. */
-  --card-back: #f6f4ee;
-  --card-back-panel: #ebe9e1;
-  --card-back-stripe: #a9c8b4;
-  --card-back-ring: rgba(0, 0, 0, 0.08);
-}
-
-/* Kill all transitions during explicit theme switches (Interfaces guideline #1) */
-[data-disable-transitions] *,
-[data-disable-transitions] *::before,
-[data-disable-transitions] *::after {
-  transition: none !important;
-  animation: none !important;
-}
 
 html {
   -webkit-text-size-adjust: 100%;

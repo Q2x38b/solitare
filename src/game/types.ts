@@ -43,7 +43,6 @@ export interface Move {
 
 export interface Settings {
   drawCount: 1 | 2 | 3;
-  theme: "felt" | "paper";
   sound: boolean;
   autoMove: boolean;
   animations: boolean;

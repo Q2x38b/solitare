@@ -1,28 +1,29 @@
 // Card-back pattern: panel with fully-rounded diagonal pill stripes.
-// Drawn as SVG so each stripe has truly round end-caps (a CSS repeating
-// gradient can't do that). Colours pull from CSS vars so light + dark
-// themes both look intentional.
+// The SVG uses preserveAspectRatio="none" with a viewBox whose aspect
+// matches the slot, so the pattern fills edge-to-edge (no bottom wedge).
+// Because we pick the viewBox aspect to match, the pills don't distort.
 
 interface Props {
   inset?: number;
   radius?: number;
 }
 
-// viewBox tuned close to the 82×116 card aspect (~0.707). The stripes are
-// laid out horizontally then rotated -45° through the centre, with enough
-// over-spill on all sides that the pattern tiles the full slice-cropped
-// visible area without any dead wedges.
+// Target aspect matches an 82×116 card slot minus the 8px frame on each
+// side: ~66×100, aspect 0.66. We use a nominal 100-unit wide viewBox and
+// compute the height from the aspect so the SVG coordinate system is
+// consistent regardless of actual card size.
 const VB_W = 100;
-const VB_H = 140;
+const VB_H = 150;
 
-// Dense: 13-unit thickness, 17-unit step (gap 4). Extended Y range covers
-// both the top-left and bottom-right corners after rotation.
-const STRIPE_THICKNESS = 13;
-const STRIPE_STEP = 17;
-const STRIPE_X = -120;
-const STRIPE_WIDTH = 340;
-const FIRST_Y = -180;
-const LAST_Y = 320;
+// Fewer, cleaner stripes — tuned so ~8 pills are visible without leaving
+// corner wedges empty. Thickness 22, step 36 → gap 14.
+const STRIPE_THICKNESS = 22;
+const STRIPE_STEP = 36;
+const STRIPE_X = -160;
+const STRIPE_WIDTH = 420;
+// Y range generous enough to cover both rotated corners.
+const FIRST_Y = -200;
+const LAST_Y = 340;
 
 export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
   const ys: number[] = [];
@@ -33,14 +34,14 @@ export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
       aria-hidden
       className="absolute overflow-hidden"
       style={{ inset, borderRadius: radius }}
+      // Stretch so the viewBox maps 1:1 to the slot — eliminates the
+      // slice-cropping wedge that was showing at the card's bottom-right.
+      preserveAspectRatio="none"
       viewBox={`0 0 ${VB_W} ${VB_H}`}
-      preserveAspectRatio="xMidYMid slice"
+      width="100%"
+      height="100%"
     >
-      <rect
-        width={VB_W}
-        height={VB_H}
-        fill="var(--card-back-panel)"
-      />
+      <rect width={VB_W} height={VB_H} fill="var(--card-back-panel)" />
       <g transform={`rotate(-45 ${VB_W / 2} ${VB_H / 2})`}>
         {ys.map((y) => (
           <rect

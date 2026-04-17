@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { Button } from "./ui/button";
 
 interface Props {
   elapsed: number;
@@ -37,22 +37,12 @@ export function WinPanel({ elapsed, moves, score, onNewGame, onClose }: Props) {
         <Cell label="Score" value={score} />
       </div>
       <div className="mt-5 flex gap-2 justify-center">
-        <motion.button
-          onClick={onClose}
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
-          className="px-4 h-10 pill text-[13px] font-semibold focus-ring"
-        >
+        <Button variant="secondary" size="lg" onClick={onClose}>
           View board
-        </motion.button>
-        <motion.button
-          onClick={onNewGame}
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
-          className="px-5 h-10 pill-accent text-[13px] font-semibold focus-ring"
-        >
+        </Button>
+        <Button variant="default" size="lg" onClick={onNewGame}>
           New deal
-        </motion.button>
+        </Button>
       </div>
     </div>
   );

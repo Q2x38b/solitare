@@ -17,7 +17,6 @@ const STATS_KEY = "solitaire:v1:stats";
 
 const defaultSettings: Settings = {
   drawCount: 2,
-  theme: "felt",
   sound: true,
   autoMove: true,
   animations: true,
