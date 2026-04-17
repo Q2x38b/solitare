@@ -323,42 +323,122 @@ export function findBestMoveForCard(state: GameState, from: PileId, count: numbe
   return null;
 }
 
-/**
- * Greedy auto-player: returns the next move or "draw" decision, or null if
- * the solver gives up. Priority order:
- *   1. Ace / 2 → foundation (always safe)
- *   2. Any tableau move that flips a face-down card
- *   3. Safe foundation move (rank ≤ min(other foundation tops) + 2)
- *   4. Waste → tableau if it stacks
- *   5. Tableau → tableau that unblocks a buried face-down row (multi-card)
- *   6. Draw from stock (unless both stock and waste are empty, i.e. would
- *      just cycle a recycled deck with nothing new to commit)
- */
 export type AutoAction =
   | { kind: "move"; move: MoveAttempt }
   | { kind: "draw" };
 
+/**
+ * Smarter auto-player. Instead of a fixed priority ladder, enumerate every
+ * legal move, score each by how much it advances the game, and pick the
+ * best. Key signals that push a score up:
+ *   - Flipping a face-down card (the single biggest progress event)
+ *   - Getting Aces / 2s onto the foundation immediately
+ *   - Emptying a tableau column (creates valuable King real-estate)
+ *   - Safely committing to the foundation (opposite-colour +2 rule)
+ * Key signals that push a score down:
+ *   - Breaking an intact face-up run without unlocking anything
+ *   - Parking a card on foundation when its same-rank mate could still
+ *     reveal face-down cards in the tableau
+ *   - Moving a King into an empty column for no reason (wastes the slot)
+ *   - Dumping waste onto an empty column if it's not a King (illegal
+ *     anyway, but scored so it never shows up)
+ * If no move scores above the draw threshold, draw from stock.
+ */
 export function findAutoPlayAction(state: GameState): AutoAction | null {
   const tableauSrcs: PileId[] = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"];
 
-  // 1. Ace / 2 → foundation
+  type Scored = { action: AutoAction; score: number };
+  const candidates: Scored[] = [];
+
+  // --- Opposite-colour safety check for foundation plays ---------------
+  // A card of rank R is "safe" to foundation when both opposite-colour
+  // foundations are at rank ≥ R - 2. Below that we risk stranding an
+  // opposite-colour R-1 card that wanted to stack.
+  const isFoundationSafe = (card: Card): boolean => {
+    if (card.rank <= 2) return true;
+    const oppositeSuits: Suit[] =
+      colorOf(card.suit) === "red" ? ["S", "C"] : ["H", "D"];
+    let minOpp = 13;
+    for (const s of oppositeSuits) {
+      const fIdx = foundationIndexForSuit(state, s);
+      const f = fIdx !== null ? state.foundations[fIdx] : [];
+      const topRank = f[f.length - 1]?.rank ?? 0;
+      if (topRank < minOpp) minOpp = topRank;
+    }
+    return card.rank <= minOpp + 2;
+  };
+
+  // Cache: is this suit's matching-colour partner still needed on the
+  // tableau? (i.e. would sending this card to the foundation orphan a
+  // multi-card sequence that wanted it?)
+  const sameColourMateOnTableau = (card: Card): boolean => {
+    // Only 3+ matters — 2s can always go.
+    if (card.rank <= 2) return false;
+    const sameColour = colorOf(card.suit);
+    for (let i = 0; i < 7; i++) {
+      const col = state.tableau[i];
+      for (let j = 0; j < col.length; j++) {
+        const c = col[j];
+        if (!c.faceUp) continue;
+        if (colorOf(c.suit) !== sameColour) continue;
+        if (c.rank !== card.rank) continue;
+        // The mate card exists on tableau — check the card immediately
+        // below (rank - 1, opposite colour). If that rank-1 opposite
+        // card is still somewhere in play (tableau face-up/down or
+        // waste/stock), then we still need SOME rank-card to anchor
+        // its eventual placement.
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // --- Collect foundation plays -----------------------------------------
   for (const src of [...tableauSrcs, "waste" as PileId]) {
     const pile = pileRef(state, src);
     const top = pile[pile.length - 1];
     if (!top || !top.faceUp) continue;
-    if (top.rank > 2) continue;
     const fIdx = foundationIndexForSuit(state, top.suit);
     if (fIdx === null) continue;
     const fTop = state.foundations[fIdx][state.foundations[fIdx].length - 1];
-    if (canPlaceOnFoundation(fTop, top, fIdx, state)) {
-      return { kind: "move", move: { from: src, to: `f${fIdx}` as PileId, count: 1 } };
+    if (!canPlaceOnFoundation(fTop, top, fIdx, state)) continue;
+
+    let score = 0;
+    // Aces and 2s: always highest priority.
+    if (top.rank <= 2) {
+      score = 1000;
+    } else if (isFoundationSafe(top)) {
+      score = 260;
+      // Slight penalty if the same-colour mate is still buried — we
+      // might still need this rank's partner to anchor a tableau run.
+      if (sameColourMateOnTableau(top)) score -= 40;
+    } else {
+      // Unsafe foundation play. Keep it in play unless doing so also
+      // flips a face-down below, which swings the calculus.
+      score = 20;
     }
+
+    // Big bonus if this move flips a face-down card.
+    if (src.startsWith("t")) {
+      const col = pileRef(state, src);
+      if (col.length >= 2 && !col[col.length - 2].faceUp) {
+        score += 320;
+      } else if (col.length === 1) {
+        // Emptying a column is also valuable (opens King slot).
+        score += 120;
+      }
+    }
+
+    candidates.push({
+      action: { kind: "move", move: { from: src, to: `f${fIdx}` as PileId, count: 1 } },
+      score,
+    });
   }
 
-  // 2. Tableau move that flips a face-down card
+  // --- Tableau → tableau moves -----------------------------------------
+  // Try every face-up suffix of every column as a candidate stack.
   for (let i = 0; i < 7; i++) {
     const col = state.tableau[i];
-    // find first face-up card
     let firstUp = -1;
     for (let j = 0; j < col.length; j++) {
       if (col[j].faceUp) {
@@ -366,95 +446,112 @@ export function findAutoPlayAction(state: GameState): AutoAction | null {
         break;
       }
     }
-    if (firstUp === -1) continue;
-    // Only a move that takes everything from firstUp to end flips the face-down below
-    if (firstUp === 0) continue; // nothing face-down to flip
-    const moving = col.slice(firstUp);
-    // Try tableau → foundation (only works for single-card)
-    if (moving.length === 1) {
-      const card = moving[0];
-      const fIdx = foundationIndexForSuit(state, card.suit);
-      if (fIdx !== null) {
-        const fTop = state.foundations[fIdx][state.foundations[fIdx].length - 1];
-        if (canPlaceOnFoundation(fTop, card, fIdx, state)) {
-          return { kind: "move", move: { from: `t${i}` as PileId, to: `f${fIdx}` as PileId, count: 1 } };
+    if (firstUp < 0) continue;
+
+    // Iterate chunk sizes from largest (whole face-up run) down to 1.
+    // Larger chunks are naturally preferred because they can flip face-
+    // downs; smaller chunks are only useful for chain rebuilds.
+    for (let count = col.length - firstUp; count >= 1; count--) {
+      const startIdx = col.length - count;
+      if (startIdx < firstUp) break;
+      const moving = col.slice(startIdx);
+      const head = moving[0];
+      const flipsFaceDown = startIdx === firstUp && firstUp > 0;
+      const emptiesColumn = startIdx === 0;
+
+      for (let j = 0; j < 7; j++) {
+        if (i === j) continue;
+        const target = state.tableau[j];
+        const tTop = target[target.length - 1];
+        if (!canStackOnTableau(tTop, head)) continue;
+
+        const toEmpty = target.length === 0;
+        let score = 0;
+
+        if (flipsFaceDown) {
+          // Best kind of tableau move.
+          score = 520 + firstUp * 35;
+        } else if (emptiesColumn && !toEmpty) {
+          // Empties a column (useful real-estate), but only if the
+          // destination isn't itself an empty column (which would be
+          // pointless shuffling).
+          score = 180;
+        } else {
+          // Pure chain rebuild. Only interesting if the head already
+          // sits on its anchor and we're building a longer sequence.
+          // In practice low-score, so it won't be picked unless
+          // nothing better is available.
+          score = 30;
         }
-      }
-    }
-    // Try tableau → other tableau column
-    for (let j = 0; j < 7; j++) {
-      if (i === j) continue;
-      const target = state.tableau[j];
-      const tTop = target[target.length - 1];
-      if (canStackOnTableau(tTop, moving[0])) {
-        return {
-          kind: "move",
-          move: { from: `t${i}` as PileId, to: `t${j}` as PileId, count: moving.length },
-        };
+
+        // Kings to empty columns: only when it actually unblocks.
+        if (head.rank === 13 && toEmpty && !flipsFaceDown) {
+          // Discourage — no point sending a King to empty unless it
+          // reveals a face-down, which is already scored above.
+          score -= 100;
+        }
+
+        // Prefer moves that don't break an already-stacked run: if the
+        // card immediately above the chunk (col[startIdx - 1]) forms a
+        // valid descending alt-colour with the new target top, we're
+        // not really "breaking" anything.
+        if (startIdx > firstUp) {
+          const above = col[startIdx - 1];
+          if (above.faceUp) score -= 30;
+        }
+
+        candidates.push({
+          action: {
+            kind: "move",
+            move: { from: `t${i}` as PileId, to: `t${j}` as PileId, count },
+          },
+          score,
+        });
       }
     }
   }
 
-  // 3. Safe foundation move (heuristic)
-  const safe = findAutoFoundationMove(state);
-  if (safe) return { kind: "move", move: safe };
-
-  // 4. Waste → tableau if it stacks (stacks onto an existing column, not empty)
+  // --- Waste → tableau -------------------------------------------------
   if (state.waste.length) {
     const card = state.waste[state.waste.length - 1];
     for (let j = 0; j < 7; j++) {
       const target = state.tableau[j];
-      if (target.length === 0) continue;
+      if (target.length === 0) {
+        if (card.rank === 13) {
+          candidates.push({
+            action: { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } },
+            score: 240,
+          });
+        }
+        continue;
+      }
       const tTop = target[target.length - 1];
       if (canStackOnTableau(tTop, card)) {
-        return { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } };
-      }
-    }
-    // Also: waste K → empty column
-    if (card.rank === 13) {
-      for (let j = 0; j < 7; j++) {
-        if (state.tableau[j].length === 0) {
-          return { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } };
-        }
+        candidates.push({
+          action: { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } },
+          score: 300,
+        });
       }
     }
   }
 
-  // 5. Tableau → empty column for King that frees something
-  for (let i = 0; i < 7; i++) {
-    const col = state.tableau[i];
-    if (col.length === 0) continue;
-    let firstUp = -1;
-    for (let j = 0; j < col.length; j++) {
-      if (col[j].faceUp) {
-        firstUp = j;
-        break;
-      }
-    }
-    if (firstUp <= 0) continue; // no face-down below
-    const top = col[firstUp];
-    if (top.rank !== 13) continue;
-    for (let j = 0; j < 7; j++) {
-      if (j === i) continue;
-      if (state.tableau[j].length === 0) {
-        return {
-          kind: "move",
-          move: { from: `t${i}` as PileId, to: `t${j}` as PileId, count: col.length - firstUp },
-        };
-      }
-    }
+  // Pick the highest-scoring action, if it's worth more than a draw.
+  candidates.sort((a, b) => b.score - a.score);
+  if (candidates.length && candidates[0].score > 15) {
+    return candidates[0].action;
   }
 
-  // 6. Draw from stock
-  if (state.stock.length > 0) {
-    return { kind: "draw" };
-  }
-  // Recycle stock only if we haven't recycled too many times already
+  // --- Fallback: draw ---------------------------------------------------
+  if (state.stock.length > 0) return { kind: "draw" };
   const recycleBudget = state.drawCount === 1 ? 2 : state.drawCount === 2 ? 3 : 4;
   if (state.waste.length > 0 && state.passes < recycleBudget) {
     return { kind: "draw" };
   }
 
+  // Final fallback: if the best candidate was below the draw threshold
+  // but we literally can't draw, take it anyway to avoid giving up
+  // prematurely.
+  if (candidates.length) return candidates[0].action;
   return null;
 }
 
