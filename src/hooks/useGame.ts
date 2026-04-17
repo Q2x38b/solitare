@@ -16,7 +16,7 @@ const SETTINGS_KEY = "solitaire:v1:settings";
 const STATS_KEY = "solitaire:v1:stats";
 
 const defaultSettings: Settings = {
-  drawCount: 1,
+  drawCount: 2,
   theme: "felt",
   sound: true,
   autoMove: true,

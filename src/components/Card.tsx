@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { colorOf, rankChar } from "../game/engine";
 import type { Card as CardT } from "../game/types";
 import { SuitIcon } from "./SuitIcon";
+import { CardBackPattern } from "./CardBackPattern";
 
 interface Props {
   card: CardT;
@@ -24,11 +25,7 @@ function CardInner({ card, faceDown, dim, compact }: Props) {
         style={{ backgroundColor: "#151517" }}
         aria-label="Face-down card"
       >
-        <div
-          aria-hidden
-          className="absolute rounded-[6px] card-back-stripes"
-          style={{ inset: 8 }}
-        />
+        <CardBackPattern inset={8} radius={6} />
       </div>
     );
   }
