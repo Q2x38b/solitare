@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Board } from "./components/Board";
 import { TopBar } from "./components/TopBar";
-import { BottomSheet } from "./components/BottomSheet";
+import { Modal } from "./components/Modal";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { StatsPanel } from "./components/StatsPanel";
 import { WinPanel } from "./components/WinPanel";
@@ -49,6 +49,7 @@ export default function App() {
 
   const onNewGame = useCallback(() => {
     play("shuffle");
+    g.setAutoPlay(false);
     g.newRound();
     setShowWin(false);
     setShowSettings(false);
@@ -56,12 +57,14 @@ export default function App() {
 
   const onRestart = useCallback(() => {
     play("shuffle");
+    g.setAutoPlay(false);
     g.restart();
     setShowWin(false);
   }, [g, play]);
 
   const onUndo = useCallback(() => {
     play("click");
+    g.setAutoPlay(false);
     g.undo();
   }, [g, play]);
 
@@ -117,6 +120,10 @@ export default function App() {
         case "a":
           g.autoComplete();
           break;
+        case "p":
+          play("click");
+          g.setAutoPlay(!g.autoPlay);
+          break;
         case "escape":
           setShowSettings(false);
           setShowStats(false);
@@ -138,12 +145,17 @@ export default function App() {
         onNewGame={onNewGame}
         onRestart={onRestart}
         onUndo={onUndo}
-        canUndo={g.undoStack.length > 0 && !g.isAutoRunning}
+        canUndo={g.undoStack.length > 0 && !g.isAutoRunning && !g.autoPlay}
         onHint={onHint}
         onSettings={() => setShowSettings(true)}
         onStats={() => setShowStats(true)}
         theme={g.settings.theme}
         onToggleTheme={onToggleTheme}
+        autoPlay={g.autoPlay}
+        onToggleAutoPlay={() => {
+          play("click");
+          g.setAutoPlay(!g.autoPlay);
+        }}
       />
       <div className="hair mx-5" />
       <main className="relative flex-1 min-h-0">
@@ -170,17 +182,17 @@ export default function App() {
         </div>
       </footer>
 
-      <BottomSheet open={showSettings} onClose={() => setShowSettings(false)} title="Settings">
+      <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Settings">
         <SettingsPanel
           settings={g.settings}
           onChange={(p) => g.updateSettings(p)}
           onNewGame={onNewGame}
         />
-      </BottomSheet>
-      <BottomSheet open={showStats} onClose={() => setShowStats(false)} title="Statistics">
+      </Modal>
+      <Modal open={showStats} onClose={() => setShowStats(false)} title="Statistics">
         <StatsPanel stats={g.stats} />
-      </BottomSheet>
-      <BottomSheet open={showWin && g.state.won} onClose={() => setShowWin(false)}>
+      </Modal>
+      <Modal open={showWin && g.state.won} onClose={() => setShowWin(false)}>
         <WinPanel
           elapsed={g.elapsed}
           moves={g.state.moves}
@@ -188,9 +200,7 @@ export default function App() {
           onNewGame={onNewGame}
           onClose={() => setShowWin(false)}
         />
-      </BottomSheet>
-      {/* Fullscreen decorative sparkles — pointer-events: none, purely
-          overlaying; the panel above is the real reward UI. */}
+      </Modal>
       <WinSparkles show={showWin && g.state.won} />
     </div>
   );

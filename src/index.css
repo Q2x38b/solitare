@@ -147,12 +147,15 @@ button:disabled {
 .card-back::before {
   content: "";
   position: absolute;
-  inset: 4px;
-  border-radius: 8px;
-  background: repeating-linear-gradient(
+  inset: 5px;
+  border-radius: 7px;
+  background-color: #ffffff;
+  background-image: repeating-linear-gradient(
     45deg,
-    #ffffff 0 4px,
-    var(--color-card-stripe) 4px 8px
+    #1a1a1c 0px,
+    #1a1a1c 5px,
+    #ffffff 5px,
+    #ffffff 10px
   );
   pointer-events: none;
 }

@@ -3,6 +3,7 @@ import {
   canAutoComplete,
   drawFromStock,
   findAutoFoundationMove,
+  findAutoPlayAction,
   findBestMoveForCard,
   newGame,
   tryMove,
@@ -68,6 +69,8 @@ export interface UseGameReturn {
   hint: () => void;
   clearHint: () => void;
   isAutoRunning: boolean;
+  autoPlay: boolean;
+  setAutoPlay: (v: boolean) => void;
 }
 
 export function useGame(): UseGameReturn {
@@ -83,6 +86,7 @@ export function useGame(): UseGameReturn {
   const [elapsed, setElapsed] = useState<number>(0);
   const [showHint, setShowHint] = useState<PileId | null>(null);
   const [isAutoRunning, setIsAutoRunning] = useState(false);
+  const [autoPlay, setAutoPlayState] = useState(false);
   const winRecorded = useRef(false);
 
   // Tick timer
@@ -274,6 +278,63 @@ export function useGame(): UseGameReturn {
 
   const clearHint = useCallback(() => setShowHint(null), []);
 
+  // Auto-play: take one action every ~420ms. Cycle detection: if we see
+  // the same state fingerprint N times with only draw actions between,
+  // stop the run — the deck is cycling with no progress.
+  const autoPlayRef = useRef({ lastFingerprint: "", drawsSinceMove: 0 });
+  useEffect(() => {
+    if (!autoPlay || state.won || isAutoRunning) return;
+    const action = findAutoPlayAction(state);
+    if (!action) {
+      setAutoPlayState(false);
+      return;
+    }
+    const fp = fingerprint(state);
+    if (action.kind === "draw") {
+      if (autoPlayRef.current.lastFingerprint === fp) {
+        autoPlayRef.current.drawsSinceMove += 1;
+      } else {
+        autoPlayRef.current.lastFingerprint = fp;
+        autoPlayRef.current.drawsSinceMove = 1;
+      }
+      // If we've cycled without making a committed move for a full deck
+      // worth of draws, give up.
+      const budget = state.drawCount === 1 ? 28 : 12;
+      if (autoPlayRef.current.drawsSinceMove > budget) {
+        setAutoPlayState(false);
+        return;
+      }
+    } else {
+      autoPlayRef.current.lastFingerprint = "";
+      autoPlayRef.current.drawsSinceMove = 0;
+    }
+    const t = window.setTimeout(() => {
+      if (action.kind === "draw") {
+        const r = drawFromStock(state);
+        if (!r) {
+          setAutoPlayState(false);
+          return;
+        }
+        setState(r.state);
+        setUndoStack((u) => [...u, r.move]);
+      } else {
+        const r = tryMove(state, action.move);
+        if (!r) {
+          setAutoPlayState(false);
+          return;
+        }
+        setState(r.state);
+        setUndoStack((u) => [...u, r.move]);
+      }
+    }, 420);
+    return () => window.clearTimeout(t);
+  }, [autoPlay, state, isAutoRunning]);
+
+  const setAutoPlay = useCallback((v: boolean) => {
+    autoPlayRef.current = { lastFingerprint: "", drawsSinceMove: 0 };
+    setAutoPlayState(v);
+  }, []);
+
   return {
     state,
     settings,
@@ -292,5 +353,14 @@ export function useGame(): UseGameReturn {
     hint,
     clearHint,
     isAutoRunning,
+    autoPlay,
+    setAutoPlay,
   };
+}
+
+function fingerprint(s: GameState): string {
+  // Compact-ish fingerprint sufficient to detect "same position again".
+  const f = s.foundations.map((p) => (p.length ? p[p.length - 1].id : "-")).join("|");
+  const t = s.tableau.map((c) => c.map((x) => (x.faceUp ? x.id : "?")).join(",")).join(";");
+  return `${s.stock.length}/${s.waste.length}|${f}|${t}`;
 }

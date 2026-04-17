@@ -320,6 +320,140 @@ export function findBestMoveForCard(state: GameState, from: PileId, count: numbe
   return null;
 }
 
+/**
+ * Greedy auto-player: returns the next move or "draw" decision, or null if
+ * the solver gives up. Priority order:
+ *   1. Ace / 2 → foundation (always safe)
+ *   2. Any tableau move that flips a face-down card
+ *   3. Safe foundation move (rank ≤ min(other foundation tops) + 2)
+ *   4. Waste → tableau if it stacks
+ *   5. Tableau → tableau that unblocks a buried face-down row (multi-card)
+ *   6. Draw from stock (unless both stock and waste are empty, i.e. would
+ *      just cycle a recycled deck with nothing new to commit)
+ */
+export type AutoAction =
+  | { kind: "move"; move: MoveAttempt }
+  | { kind: "draw" };
+
+export function findAutoPlayAction(state: GameState): AutoAction | null {
+  const tableauSrcs: PileId[] = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"];
+
+  // 1. Ace / 2 → foundation
+  for (const src of [...tableauSrcs, "waste" as PileId]) {
+    const pile = pileRef(state, src);
+    const top = pile[pile.length - 1];
+    if (!top || !top.faceUp) continue;
+    if (top.rank > 2) continue;
+    const fIdx = foundationIndexForSuit(state, top.suit);
+    if (fIdx === null) continue;
+    const fTop = state.foundations[fIdx][state.foundations[fIdx].length - 1];
+    if (canPlaceOnFoundation(fTop, top, fIdx, state)) {
+      return { kind: "move", move: { from: src, to: `f${fIdx}` as PileId, count: 1 } };
+    }
+  }
+
+  // 2. Tableau move that flips a face-down card
+  for (let i = 0; i < 7; i++) {
+    const col = state.tableau[i];
+    // find first face-up card
+    let firstUp = -1;
+    for (let j = 0; j < col.length; j++) {
+      if (col[j].faceUp) {
+        firstUp = j;
+        break;
+      }
+    }
+    if (firstUp === -1) continue;
+    // Only a move that takes everything from firstUp to end flips the face-down below
+    if (firstUp === 0) continue; // nothing face-down to flip
+    const moving = col.slice(firstUp);
+    // Try tableau → foundation (only works for single-card)
+    if (moving.length === 1) {
+      const card = moving[0];
+      const fIdx = foundationIndexForSuit(state, card.suit);
+      if (fIdx !== null) {
+        const fTop = state.foundations[fIdx][state.foundations[fIdx].length - 1];
+        if (canPlaceOnFoundation(fTop, card, fIdx, state)) {
+          return { kind: "move", move: { from: `t${i}` as PileId, to: `f${fIdx}` as PileId, count: 1 } };
+        }
+      }
+    }
+    // Try tableau → other tableau column
+    for (let j = 0; j < 7; j++) {
+      if (i === j) continue;
+      const target = state.tableau[j];
+      const tTop = target[target.length - 1];
+      if (canStackOnTableau(tTop, moving[0])) {
+        return {
+          kind: "move",
+          move: { from: `t${i}` as PileId, to: `t${j}` as PileId, count: moving.length },
+        };
+      }
+    }
+  }
+
+  // 3. Safe foundation move (heuristic)
+  const safe = findAutoFoundationMove(state);
+  if (safe) return { kind: "move", move: safe };
+
+  // 4. Waste → tableau if it stacks (stacks onto an existing column, not empty)
+  if (state.waste.length) {
+    const card = state.waste[state.waste.length - 1];
+    for (let j = 0; j < 7; j++) {
+      const target = state.tableau[j];
+      if (target.length === 0) continue;
+      const tTop = target[target.length - 1];
+      if (canStackOnTableau(tTop, card)) {
+        return { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } };
+      }
+    }
+    // Also: waste K → empty column
+    if (card.rank === 13) {
+      for (let j = 0; j < 7; j++) {
+        if (state.tableau[j].length === 0) {
+          return { kind: "move", move: { from: "waste", to: `t${j}` as PileId, count: 1 } };
+        }
+      }
+    }
+  }
+
+  // 5. Tableau → empty column for King that frees something
+  for (let i = 0; i < 7; i++) {
+    const col = state.tableau[i];
+    if (col.length === 0) continue;
+    let firstUp = -1;
+    for (let j = 0; j < col.length; j++) {
+      if (col[j].faceUp) {
+        firstUp = j;
+        break;
+      }
+    }
+    if (firstUp <= 0) continue; // no face-down below
+    const top = col[firstUp];
+    if (top.rank !== 13) continue;
+    for (let j = 0; j < 7; j++) {
+      if (j === i) continue;
+      if (state.tableau[j].length === 0) {
+        return {
+          kind: "move",
+          move: { from: `t${i}` as PileId, to: `t${j}` as PileId, count: col.length - firstUp },
+        };
+      }
+    }
+  }
+
+  // 6. Draw from stock
+  if (state.stock.length > 0) {
+    return { kind: "draw" };
+  }
+  // Recycle stock only if we haven't recycled too many times already
+  if (state.waste.length > 0 && state.passes < (state.drawCount === 1 ? 2 : 4)) {
+    return { kind: "draw" };
+  }
+
+  return null;
+}
+
 export function hasAnyLegalMove(state: GameState): boolean {
   for (let i = 0; i < 7; i++) {
     const col = state.tableau[i];

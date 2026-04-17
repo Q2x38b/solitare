@@ -33,6 +33,8 @@ interface Props {
   onStats: () => void;
   theme: "felt" | "paper";
   onToggleTheme: () => void;
+  autoPlay: boolean;
+  onToggleAutoPlay: () => void;
 }
 
 function formatTime(s: number) {
@@ -55,6 +57,8 @@ export function TopBar({
   onStats,
   theme,
   onToggleTheme,
+  autoPlay,
+  onToggleAutoPlay,
 }: Props) {
   return (
     <header className="relative z-20 px-5 pt-4 pb-3">
@@ -79,6 +83,29 @@ export function TopBar({
         </div>
 
         <div className="flex items-center gap-1">
+          <motion.button
+            onClick={onToggleAutoPlay}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.5 }}
+            aria-pressed={autoPlay}
+            title={autoPlay ? "Stop auto-play (P)" : "Start auto-play (P)"}
+            aria-label={autoPlay ? "Stop auto-play" : "Start auto-play"}
+            className={clsx(
+              "h-9 px-3 rounded-full inline-flex items-center gap-1.5 focus-ring text-[12.5px] font-semibold transition",
+              autoPlay
+                ? "bg-[color:var(--accent)] text-[color:var(--accent-ink)]"
+                : "pill",
+            )}
+          >
+            {autoPlay ? <PauseIcon /> : <PlayIcon />}
+            <span className="tracking-tight">{autoPlay ? "Auto" : "Auto"}</span>
+            {autoPlay && (
+              <span
+                aria-hidden
+                className="ml-0.5 w-1.5 h-1.5 rounded-full bg-[color:var(--accent-ink)] animate-pulse"
+              />
+            )}
+          </motion.button>
           <IconBtn onClick={onUndo} disabled={!canUndo} label="Undo (Z)">
             <UndoIcon />
           </IconBtn>
@@ -203,6 +230,21 @@ function RestartIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M3 12a9 9 0 1 0 3-6.7" />
       <path d="M3 4v5h5" />
+    </svg>
+  );
+}
+function PlayIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M7 5.5a1 1 0 0 1 1.52-.86l11 6.5a1 1 0 0 1 0 1.72l-11 6.5A1 1 0 0 1 7 18.5z" />
+    </svg>
+  );
+}
+function PauseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="6" y="5" width="4" height="14" rx="1.2" />
+      <rect x="14" y="5" width="4" height="14" rx="1.2" />
     </svg>
   );
 }

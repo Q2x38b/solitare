@@ -1,17 +1,15 @@
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, type ReactNode } from "react";
-import { useMeasure } from "../hooks/useMeasure";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   title?: string;
-  children?: ReactNode;
+  children: ReactNode;
+  width?: number;
 }
 
-export function BottomSheet({ open, onClose, title, children }: Props) {
-  const [ref, bounds] = useMeasure<HTMLDivElement>();
-
+export function Modal({ open, onClose, title, children, width = 420 }: Props) {
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
@@ -22,29 +20,38 @@ export function BottomSheet({ open, onClose, title, children }: Props) {
   }, [open, onClose]);
 
   return (
-    <motion.section
-      aria-hidden={!open}
-      initial={false}
-      animate={{ height: open && bounds.height > 0 ? bounds.height : 0 }}
-      transition={{
-        type: "spring",
-        stiffness: 520,
-        damping: 44,
-        mass: 0.7,
-      }}
-      className="overflow-hidden border-t border-[color:var(--line)] bg-[color:var(--surface)]"
-      style={{ willChange: "height" }}
-    >
-      <div ref={ref}>
-        {open && (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-50 grid place-items-center p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: [0.22, 0.61, 0.36, 1] }}
+        >
           <div
+            className="absolute inset-0 bg-black/70"
+            style={{ backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+            onClick={onClose}
+            aria-hidden
+          />
+          <motion.div
             role="dialog"
-            aria-modal="false"
+            aria-modal="true"
             aria-label={title}
-            className="px-6 pt-5 pb-6 max-w-[640px] mx-auto"
+            initial={{ y: 6, scale: 0.96, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 4, scale: 0.98, opacity: 0 }}
+            transition={{
+              duration: 0.18,
+              ease: [0.2, 0.8, 0.2, 1],
+              opacity: { duration: 0.14 },
+            }}
+            className="relative w-full rounded-[22px] p-6 bg-[color:var(--surface)] border border-[color:var(--line)] shadow-2xl"
+            style={{ maxWidth: width, willChange: "transform, opacity" }}
           >
             {title && (
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-5">
                 <h2
                   className="font-semibold tracking-tight leading-none"
                   style={{ fontSize: "clamp(16px, 1.4vw, 18px)" }}
@@ -65,9 +72,9 @@ export function BottomSheet({ open, onClose, title, children }: Props) {
               </div>
             )}
             {children}
-          </div>
-        )}
-      </div>
-    </motion.section>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
