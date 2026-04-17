@@ -158,21 +158,28 @@ button:disabled {
   }
 }
 
-/* Ring overlay drawn on top of the topmost card of a hinted source pile
-   (the empty-slot glow doesn't reach when cards are on the pile). */
+/* Ring overlay for a hinted source pile. Spans the whole visible stack
+   (drawn by the Board). Framer Motion handles the enter/exit fade; the
+   looping glow comes from an SVG-less box-shadow pulse that doesn't
+   touch transform so it composes cleanly with motion's scale. */
 .hint-ring {
   position: absolute;
   border-radius: 14px;
   pointer-events: none;
-  box-shadow:
-    0 0 0 3px color-mix(in oklab, var(--accent) 80%, transparent),
-    0 0 26px color-mix(in oklab, var(--accent) 60%, transparent);
-  animation: hint-pulse-ring 1.15s ease-in-out infinite;
   z-index: 4000;
+  animation: hint-glow-pulse 1.3s ease-in-out infinite;
 }
-@keyframes hint-pulse-ring {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.04); }
+@keyframes hint-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--accent) 75%, transparent),
+      0 0 22px color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px color-mix(in oklab, var(--accent) 95%, transparent),
+      0 0 38px color-mix(in oklab, var(--accent) 75%, transparent);
+  }
 }
 
 /* Card shadows */

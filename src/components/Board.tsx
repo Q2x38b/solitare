@@ -438,7 +438,7 @@ export function Board({
               id={`f${f}` as PileId}
               width={dims.cw}
               height={dims.ch}
-              hot={drag?.hoverPile === `f${f}` || showHint === `f${f}`}
+              hot={showHint === `f${f}`}
               centerGlyph={
                 <SuitIcon suit={FOUNDATION_SUITS[f]} size={Math.max(20, dims.ch * 0.28)} />
               }
@@ -464,7 +464,7 @@ export function Board({
               id={`t${t}` as PileId}
               width={dims.cw}
               height={dims.ch}
-              hot={drag?.hoverPile === `t${t}` || showHint === `t${t}`}
+              hot={showHint === `t${t}`}
               centerGlyph={
                 state.tableau[t].length === 0 ? (
                   <FannedCardsGlyph size={Math.max(22, dims.ch * 0.32)} />
@@ -545,29 +545,49 @@ export function Board({
           );
         })}
 
-        {/* Hint ring overlay — floats over the topmost card of the hinted
-            source pile. Empty piles already get the `.slot-hot` glow. */}
-        {showHint && (() => {
-          const src = showHint;
-          if (!src.startsWith("t") && src !== "waste" && !src.startsWith("f")) return null;
-          const pile = pileRef(state, src);
-          if (pile.length === 0) return null;
-          const topCard = pile[pile.length - 1];
-          const info = cardTransforms.get(topCard.id);
-          if (!info) return null;
-          return (
-            <div
-              className="hint-ring"
-              style={{
-                left: info.x - 3,
-                top: info.y - 3,
-                width: dims.cw + 6,
-                height: dims.ch + 6,
-              }}
-              aria-hidden
-            />
-          );
-        })()}
+        {/* Hint ring overlay — spans the full card stack for tableau piles
+            (top card through bottom of last card), single-card for waste /
+            foundation. Wrapped in AnimatePresence so it fades out when the
+            hint timeout clears instead of snapping away. */}
+        <AnimatePresence>
+          {showHint && (() => {
+            const src = showHint;
+            if (!src.startsWith("t") && src !== "waste" && !src.startsWith("f")) return null;
+            const pile = pileRef(state, src);
+            if (pile.length === 0) return null;
+
+            const topInfo = cardTransforms.get(pile[0].id);
+            const bottomInfo = cardTransforms.get(pile[pile.length - 1].id);
+            if (!topInfo || !bottomInfo) return null;
+
+            // For tableau, the stack extends from the top card's y to the
+            // bottom card's y + card height. For waste / foundation, both
+            // refs resolve to the same card so the ring fits one card.
+            const top = topInfo.y;
+            const bottom = bottomInfo.y + dims.ch;
+
+            return (
+              <motion.div
+                key={src}
+                className="hint-ring"
+                aria-hidden
+                style={{
+                  left: topInfo.x - 4,
+                  top: top - 4,
+                  width: dims.cw + 8,
+                  height: bottom - top + 8,
+                }}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                transition={{
+                  duration: 0.22,
+                  ease: [0.22, 0.61, 0.36, 1],
+                }}
+              />
+            );
+          })()}
+        </AnimatePresence>
 
         {/* Auto-complete button */}
         <AnimatePresence>
