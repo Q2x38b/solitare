@@ -1,29 +1,25 @@
 // Card-back pattern: panel with fully-rounded diagonal pill stripes.
-// The SVG uses preserveAspectRatio="none" with a viewBox whose aspect
-// matches the slot, so the pattern fills edge-to-edge (no bottom wedge).
-// Because we pick the viewBox aspect to match, the pills don't distort.
+// Uses preserveAspectRatio="xMidYMid slice" (not "none") so the pills
+// stay perfectly round. The viewBox aspect (100 × 150) closely matches
+// the 8px-framed slot aspect, and the stripe phase is tuned so both
+// diagonal corners land inside a stripe — no dead wedges, no stretch.
 
 interface Props {
   inset?: number;
   radius?: number;
 }
 
-// Target aspect matches an 82×116 card slot minus the 8px frame on each
-// side: ~66×100, aspect 0.66. We use a nominal 100-unit wide viewBox and
-// compute the height from the aspect so the SVG coordinate system is
-// consistent regardless of actual card size.
 const VB_W = 100;
 const VB_H = 150;
 
-// Fewer, cleaner stripes — tuned so ~8 pills are visible without leaving
-// corner wedges empty. Thickness 22, step 36 → gap 14.
-const STRIPE_THICKNESS = 22;
+// Chunky bars, modest gap, phase offset to cover both corners after the
+// -45° rotation. See top-of-file notes in git history for the derivation.
+const STRIPE_THICKNESS = 26;
 const STRIPE_STEP = 36;
 const STRIPE_X = -160;
 const STRIPE_WIDTH = 420;
-// Y range generous enough to cover both rotated corners.
 const FIRST_Y = -200;
-const LAST_Y = 340;
+const LAST_Y = 240;
 
 export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
   const ys: number[] = [];
@@ -34,12 +30,8 @@ export function CardBackPattern({ inset = 8, radius = 6 }: Props) {
       aria-hidden
       className="absolute overflow-hidden"
       style={{ inset, borderRadius: radius }}
-      // Stretch so the viewBox maps 1:1 to the slot — eliminates the
-      // slice-cropping wedge that was showing at the card's bottom-right.
-      preserveAspectRatio="none"
       viewBox={`0 0 ${VB_W} ${VB_H}`}
-      width="100%"
-      height="100%"
+      preserveAspectRatio="xMidYMid slice"
     >
       <rect width={VB_W} height={VB_H} fill="var(--card-back-panel)" />
       <g transform={`rotate(-45 ${VB_W / 2} ${VB_H / 2})`}>
