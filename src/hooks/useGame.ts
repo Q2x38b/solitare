@@ -9,7 +9,18 @@ import {
   tryMove,
   undoMove,
 } from "../game/engine";
-import type { GameState, Move, MoveAttempt, PileId, Settings, Stats } from "../game/types";
+import type { AutoSpeed, GameState, Move, MoveAttempt, PileId, Settings, Stats } from "../game/types";
+
+type SoundName = "flip" | "place" | "shuffle" | "win" | "click";
+
+// Per-tick delay for auto-play. Tuned so slow is clearly watchable and
+// turbo is just-barely observable but doesn't hang the animation queue.
+const AUTO_SPEED_MS: Record<AutoSpeed, number> = {
+  slow: 720,
+  normal: 380,
+  fast: 170,
+  turbo: 70,
+};
 
 const STATE_KEY = "solitaire:v1:state";
 const SETTINGS_KEY = "solitaire:v1:settings";
@@ -20,6 +31,7 @@ const defaultSettings: Settings = {
   sound: true,
   autoMove: true,
   animations: true,
+  autoSpeed: "normal",
 };
 
 const defaultStats: Stats = {
@@ -74,7 +86,13 @@ export interface UseGameReturn {
   setAutoPlay: (v: boolean) => void;
 }
 
-export function useGame(): UseGameReturn {
+export function useGame(opts: { play?: (n: SoundName) => void } = {}): UseGameReturn {
+  // Stash the caller's `play` in a ref so the auto-play effect can fire
+  // sounds without re-subscribing whenever App re-renders.
+  const playRef = useRef(opts.play);
+  useEffect(() => {
+    playRef.current = opts.play;
+  }, [opts.play]);
   const [settings, setSettings] = useState<Settings>(() => loadJSON(SETTINGS_KEY, defaultSettings));
   const [stats, setStats] = useState<Stats>(() => loadJSON(STATS_KEY, defaultStats));
 
@@ -339,6 +357,7 @@ export function useGame(): UseGameReturn {
       autoPlayRef.current.drawsSinceMove = 0;
     }
 
+    const delay = AUTO_SPEED_MS[settings.autoSpeed] ?? AUTO_SPEED_MS.normal;
     const t = window.setTimeout(() => {
       let nextState: GameState | null = null;
       let committedMove: { from: PileId; to: PileId; count: number } | null = null;
@@ -349,6 +368,8 @@ export function useGame(): UseGameReturn {
           setAutoPlayState(false);
           return;
         }
+        // "shuffle" for a stock recycle, "flip" for a normal draw.
+        playRef.current?.(state.stock.length > 0 ? "flip" : "shuffle");
         nextState = r.state;
         setState(r.state);
         setUndoStack((u) => [...u, r.move]);
@@ -358,6 +379,10 @@ export function useGame(): UseGameReturn {
           setAutoPlayState(false);
           return;
         }
+        // "place" for any committed move; the extra "flip" sound when
+        // the move revealed a face-down card below is intentionally
+        // skipped — back-to-back sounds get messy at Fast/Turbo speeds.
+        playRef.current?.("place");
         nextState = r.state;
         committedMove = action.move;
         setState(r.state);
@@ -386,9 +411,9 @@ export function useGame(): UseGameReturn {
       } else if (committedMove) {
         autoPlayRef.current.lastMove = null;
       }
-    }, 420);
+    }, delay);
     return () => window.clearTimeout(t);
-  }, [autoPlay, state, isAutoRunning]);
+  }, [autoPlay, state, isAutoRunning, settings.autoSpeed]);
 
   const setAutoPlay = useCallback((v: boolean) => {
     autoPlayRef.current = {

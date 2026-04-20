@@ -41,11 +41,14 @@ export interface Move {
   scoreDelta: number;
 }
 
+export type AutoSpeed = "slow" | "normal" | "fast" | "turbo";
+
 export interface Settings {
   drawCount: 1 | 2 | 3;
   sound: boolean;
   autoMove: boolean;
   animations: boolean;
+  autoSpeed: AutoSpeed;
 }
 
 export interface Stats {

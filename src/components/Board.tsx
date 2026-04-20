@@ -126,7 +126,8 @@ export function Board({
         fromIdx: i,
       });
     });
-    const wasteDisplay = state.drawCount === 3 ? 3 : 1;
+    // Show as many fanned waste cards as the current drawCount (1/2/3).
+    const wasteDisplay = state.drawCount;
     const wasteOffset = Math.round(dims.cw * 0.26);
     state.waste.forEach((c, i) => {
       const p = pileOrigin["waste"];

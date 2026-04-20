@@ -19,9 +19,22 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Module-scope ref so useGame's callback and useSound's play function can
+// reference each other without a circular useState dance inside the body.
+type SoundName = "flip" | "place" | "shuffle" | "win" | "click";
+
 export default function App() {
-  const g = useGame();
+  // useGame needs `play` to fire auto-play sounds, but `play` itself
+  // depends on settings.sound which comes out of useGame. Break the
+  // cycle with a ref that useGame calls through, and we populate it
+  // once useSound has been created.
+  const playRef = useRef<((n: SoundName) => void) | null>(null);
+  const playProxy = useCallback((n: SoundName) => playRef.current?.(n), []);
+  const g = useGame({ play: playProxy });
   const play = useSound(g.settings.sound);
+  useEffect(() => {
+    playRef.current = play;
+  }, [play]);
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showWin, setShowWin] = useState(false);
